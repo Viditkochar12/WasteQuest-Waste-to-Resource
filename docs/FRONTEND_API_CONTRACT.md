@@ -51,7 +51,13 @@ This document specifies the exact API contract for the WasteQuest client, compar
 
 ### Route: `GET /api/reports`
 - **Source:** `server/src/routes/reports.routes.js`
-- **Purpose:** List recent waste classification reports
+- **Purpose:** List recent waste classification reports with pagination and filtering
+- **Supported Query Parameters:**
+  - `page`: Positive integer (default: 1)
+  - `limit`: Positive integer between 1 and 100 (default: 10)
+  - `category`: String (optional filter, e.g. "plastic", "organic")
+  - `status`: String (optional filter: "pending", "verified", or "rejected")
+  - *Strict Validation:* Any unsupported query parameter returns HTTP 400 `INVALID_QUERY_PARAMETER`.
 - **Success:**
   - **HTTP Status:** `200 OK`
   - **Response Shape:**
@@ -77,10 +83,17 @@ This document specifies the exact API contract for the WasteQuest client, compar
           "createdAt": "2026-10-23T19:00:00.000Z",
           "updatedAt": "2026-10-23T19:00:00.000Z"
         }
-      ]
+      ],
+      "pagination": {
+        "page": 1,
+        "limit": 10,
+        "totalReports": 1,
+        "totalPages": 1,
+        "hasNextPage": false,
+        "hasPreviousPage": false
+      }
     }
     ```
-- **Note on Pagination:** Currently returns an unpaginated raw array sorted by `createdAt: -1`. The client handles display of empty array `[]` cleanly.
 
 ---
 
@@ -117,8 +130,8 @@ This document specifies the exact API contract for the WasteQuest client, compar
 ---
 
 ### Route: `POST /api/classify` (AI Vision Classification)
-- **Status in Active Backend (`main` branch):** **NOT MOUNTED YET** (Returns `404 ROUTE_NOT_FOUND`).
-- **Specification Source:** `origin/feature/ai-classification` (`ai/README.md` & `ai/src/classifyWaste.js`)
+- **Status in Active Backend:** **NOT MOUNTED YET IN Express `app.js`** (Returns `404 ROUTE_NOT_FOUND`).
+- **Specification Source:** `ai/src/classifyWaste.js` (Merged into `main` via PR #7)
 - **Agreed Contract Specification:**
   - **HTTP Method:** `POST`
   - **Endpoint:** `/api/classify`
@@ -141,17 +154,11 @@ This document specifies the exact API contract for the WasteQuest client, compar
           "symbol": "♻️"
         },
         "disposalAdvice": "Empty liquids, rinse off food residue, crush/flatten the item, and place in the dry recycling bin.",
-        "downstreamRoute": "Material Recovery Facility (MRF) -> Optical sorting -> Shredding & washing -> Extruded into recycled HDPE/PET pellets for remanufacturing.",
-        "environmentalImpact": {
-          "co2SavedKg": 0.082,
-          "waterSavedLiters": 1.5,
-          "landfillDivertedGrams": 30,
-          "assumptions": "Baseline compares mechanical recycling of PET/HDPE against virgin polymer synthesis."
-        }
+        "downstreamRoute": "Material Recovery Facility (MRF) -> Optical sorting -> Shredding & washing -> Extruded into recycled HDPE/PET pellets for remanufacturing."
       }
     }
     ```
-  - **Error Response (`400 Bad Request` or `422 Unprocessable Entity`):**
+  - **Error Response (`400 Bad Request`, `415`, or `422 Unprocessable Entity`):**
     ```json
     {
       "success": false,
@@ -171,7 +178,7 @@ This document specifies the exact API contract for the WasteQuest client, compar
 ---
 
 ### Proposed Route: `GET /api/users/me`
-- **Status in Active Backend:** **NOT IMPLEMENTED YET** (Returns `404 ROUTE_NOT_FOUND`). No auth middleware in `server/`.
+- **Status in Active Backend:** **NOT IMPLEMENTED YET** (Returns `404 ROUTE_NOT_FOUND`).
 
 ---
 
@@ -179,8 +186,8 @@ This document specifies the exact API contract for the WasteQuest client, compar
 
 | Feature / Route | Agreed Specification | Active Backend (`server/`) | Frontend Handling |
 |---|---|---|---|
-| `POST /api/classify` | AI image classification endpoint | Not mounted in `app.js` (404) | Client attempts real call; surfaces actual backend error code `ROUTE_NOT_FOUND`. Has explicit toggle `VITE_USE_MOCK=true` with prominent badge for standalone demo/testing. |
+| `POST /api/classify` | AI image classification endpoint | Logic merged in `ai/`, but not mounted in `server/src/app.js` (404) | Client attempts real call; surfaces actual backend error code `ROUTE_NOT_FOUND`. Has explicit toggle `VITE_USE_MOCK=true` with prominent banner for local demonstration. |
 | Report Image Upload | `POST /api/reports` requires `image.url` and `image.publicId` | Backend does not provide image cloud upload middleware (e.g. Cloudinary/S3) | Flagged in `docs/OPEN_QUESTIONS.md`. Client service accepts both modes: either classification returns uploaded image details, or client provides fallback preview ref. |
-| Report Coordinates | `POST /api/reports` requires `location.latitude` & `longitude` | Required in Mongoose schema | Client requests standard browser Geolocation (HTML5 Geolocation API with user permission) when submitting a report, or provides graceful fallback. |
+| Report Coordinates | `POST /api/reports` requires `location.latitude` & `longitude` | Required in Mongoose schema | Client requests standard browser Geolocation (HTML5 Geolocation API with user permission) when submitting a report, or provides graceful fallback coordinates. |
 | `GET /api/leaderboard` | Returns ranked users and EcoPoints | Not implemented (404) | Client safely renders "Leaderboard not available yet" state, never fabricating mock leaderboard entries in production mode. |
-| Pagination | Anticipated pagination query params (`page`, `limit`) | `GET /api/reports` returns all reports array | Client works directly with `data: Report[]` array. |
+| Pagination | Anticipated pagination query params (`page`, `limit`) | Fully implemented in `server/src/routes/reports.routes.js` | Client service passes clean query parameters and renders Previous/Next pagination controls. |

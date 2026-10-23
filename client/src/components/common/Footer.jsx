@@ -1,9 +1,8 @@
-
 export function Footer() {
   return (
     <footer
       style={{
-        background: "#070c09",
+        background: "var(--bg)",
         borderTop: "1px solid var(--border-subtle)",
         paddingTop: "4rem",
         paddingBottom: "3rem"
@@ -11,6 +10,31 @@ export function Footer() {
       role="contentinfo"
     >
       <div className="container">
+        {/* Prominent Mandatory Compliance Notice */}
+        <div
+          style={{
+            background: "rgba(23, 27, 58, 0.7)",
+            border: "1px solid var(--border-subtle)",
+            borderRadius: "var(--radius-md)",
+            padding: "1rem 1.5rem",
+            marginBottom: "3rem",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.75rem",
+            color: "var(--mute)",
+            fontSize: "0.875rem"
+          }}
+        >
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" />
+            <line x1="12" y1="16" x2="12" y2="12" />
+            <line x1="12" y1="8" x2="12.01" y2="8" />
+          </svg>
+          <span>
+            <strong>Notice:</strong> Routes are illustrative. Accepted materials and hazardous-waste rules differ by city.
+          </span>
+        </div>
+
         <div
           style={{
             display: "grid",
@@ -19,7 +43,7 @@ export function Footer() {
             marginBottom: "3rem"
           }}
         >
-          {/* Brand & Mission */}
+          {/* Brand */}
           <div>
             <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
               <div
@@ -27,88 +51,69 @@ export function Footer() {
                   width: "32px",
                   height: "32px",
                   borderRadius: "8px",
-                  background: "var(--brand-primary)",
+                  background: "var(--accent)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  color: "#062413",
+                  color: "#0e1124",
                   fontWeight: 800
                 }}
               >
                 WQ
               </div>
-              <span style={{ fontFamily: "var(--font-display)", fontWeight: 800, fontSize: "1.25rem" }}>
-                Waste<span style={{ color: "var(--brand-primary)" }}>Quest</span>
+              <span style={{ fontFamily: "var(--font-heading)", fontWeight: 800, fontSize: "1.25rem" }}>
+                Waste<span style={{ color: "var(--accent)" }}>Quest</span>
               </span>
             </div>
-            <p style={{ fontSize: "0.875rem", color: "var(--text-muted)", lineHeight: 1.6 }}>
-              Accelerating circular economy transitions through computer vision waste classification, verifiable
-              recovery data, and community engagement.
+            <p style={{ fontSize: "0.875rem", color: "var(--mute)", lineHeight: 1.6 }}>
+              Deep vision waste classification and circular material tracking.
             </p>
           </div>
 
-          {/* Quick Navigation */}
+          {/* Quick Anchors */}
           <div>
-            <h4 style={{ fontSize: "0.9375rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-primary)", marginBottom: "1rem" }}>
+            <h4 style={{ fontSize: "0.875rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink)", marginBottom: "1rem" }}>
               Navigation
             </h4>
-            <ul style={{ listStyle: "none", padding: 0, display: "flex", flexDirection: "column", gap: "0.625rem" }}>
+            <ul style={{ listStyle: "none", padding: 0, display: "flex", flexDirection: "column", gap: "0.5rem" }}>
               <li>
-                <a href="#scan-workspace" style={{ color: "var(--text-secondary)", fontSize: "0.875rem" }}>
-                  Scan Waste
+                <a href="#streams" style={{ color: "var(--mute)", fontSize: "0.875rem", textDecoration: "none" }}>
+                  Resource streams
                 </a>
               </li>
               <li>
-                <a href="#road-journey" style={{ color: "var(--text-secondary)", fontSize: "0.875rem" }}>
-                  How It Works (Journey)
+                <a href="#scan-workspace" style={{ color: "var(--mute)", fontSize: "0.875rem", textDecoration: "none" }}>
+                  Scan waste
                 </a>
               </li>
               <li>
-                <a href="#sorting-belt" style={{ color: "var(--text-secondary)", fontSize: "0.875rem" }}>
-                  Sorting Conveyor
+                <a href="#dashboard" style={{ color: "var(--mute)", fontSize: "0.875rem", textDecoration: "none" }}>
+                  Recent reports
                 </a>
               </li>
               <li>
-                <a href="#dashboard" style={{ color: "var(--text-secondary)", fontSize: "0.875rem" }}>
-                  Verified Reports
-                </a>
-              </li>
-              <li>
-                <a href="#leaderboard" style={{ color: "var(--text-secondary)", fontSize: "0.875rem" }}>
+                <a href="#leaderboard" style={{ color: "var(--mute)", fontSize: "0.875rem", textDecoration: "none" }}>
                   EcoRank Leaderboard
                 </a>
               </li>
             </ul>
           </div>
 
-          {/* Standards & Compliance */}
+          {/* Standards */}
           <div>
-            <h4 style={{ fontSize: "0.9375rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-primary)", marginBottom: "1rem" }}>
-              Engineering Standards
+            <h4 style={{ fontSize: "0.875rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink)", marginBottom: "1rem" }}>
+              Accessibility & Ethics
             </h4>
-            <ul style={{ listStyle: "none", padding: 0, display: "flex", flexDirection: "column", gap: "0.625rem", fontSize: "0.875rem", color: "var(--text-muted)" }}>
-              <li>✓ WCAG 2.1 AA Contrast Compliant</li>
-              <li>✓ Accessible Keyboard Navigation</li>
-              <li>✓ Prefers-Reduced-Motion Support</li>
-              <li>✓ Sub-100KB Inline Vector Footprint</li>
+            <ul style={{ listStyle: "none", padding: 0, display: "flex", flexDirection: "column", gap: "0.5rem", fontSize: "0.875rem", color: "var(--mute)" }}>
+              <li>✓ WCAG 2.1 AA Contrast Verified</li>
+              <li>✓ Prefers-Reduced-Motion Respected</li>
               <li>✓ Zero Fake Data Guarantee</li>
+              <li>✓ Native Keyboard Operable</li>
             </ul>
-          </div>
-
-          {/* Hackathon Track Info */}
-          <div>
-            <h4 style={{ fontSize: "0.9375rem", textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--text-primary)", marginBottom: "1rem" }}>
-              Hackathon Track
-            </h4>
-            <p style={{ fontSize: "0.875rem", color: "var(--text-muted)", lineHeight: 1.6 }}>
-              Track 06 — Sustainability & Climate Tech<br />
-              Theme: ST-01 Waste to Resource<br />
-              Built for Kalvium Community
-            </p>
           </div>
         </div>
 
-        {/* Bottom Credits & Copyright */}
+        {/* Bottom Credits */}
         <div
           style={{
             borderTop: "1px solid var(--border-subtle)",
@@ -119,16 +124,16 @@ export function Footer() {
             justifyContent: "space-between",
             gap: "1rem",
             fontSize: "0.8125rem",
-            color: "var(--text-muted)"
+            color: "var(--mute)"
           }}
         >
           <div>
             © {new Date().getFullYear()} WasteQuest. Open source circular tech.
           </div>
           <div style={{ display: "flex", gap: "1.5rem" }}>
-            <span>Vidit Kochar (Backend Lead)</span>
-            <span>Virendra Singh (AI Lead)</span>
-            <span>Senior Frontend Engineer</span>
+            <span>Vidit Kochar (Backend)</span>
+            <span>Virendra Singh (AI)</span>
+            <span>Frontend & Motion Design</span>
           </div>
         </div>
       </div>

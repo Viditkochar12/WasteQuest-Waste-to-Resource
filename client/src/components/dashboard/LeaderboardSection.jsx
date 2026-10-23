@@ -51,27 +51,19 @@ export default function LeaderboardSection() {
     <section id="leaderboard" className="section-wrapper" aria-labelledby="leaderboard-title">
       <div className="container">
         {/* Section Header */}
-        <div className="section-header text-center">
-          <div className="section-tag">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <path d="M6 9H4.5a2.5 2.5 0 0 1 0-5H6" />
-              <path d="M18 9h1.5a2.5 2.5 0 0 0 0-5H18" />
-              <path d="M4 22h16" />
-              <path d="M10 14.66V17c0 .55-.47.98-.97 1.21C7.85 18.75 7 20.24 7 22" />
-              <path d="M14 14.66V17c0 .55.47.98.97 1.21C16.15 18.75 17 20.24 17 22" />
-              <path d="M18 2H6v7a6 6 0 0 0 12 0V2Z" />
-            </svg>
+        <div style={{ marginBottom: "2.5rem", textAlign: "center" }}>
+          <div className="chip" style={{ marginBottom: "0.75rem" }}>
             EcoRank Leaderboard
           </div>
           <h2 id="leaderboard-title">Top Sustainability Champions</h2>
-          <p>
+          <p style={{ marginInline: "auto" }}>
             Recognizing citizens and teams recovering the highest volume of recyclables and diverting municipal waste.
           </p>
         </div>
 
         {/* Content Box */}
         <div style={{ maxWidth: "760px", marginInline: "auto" }}>
-          {/* Loading state skeleton */}
+          {/* Loading Skeleton */}
           {loading && (
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               <Skeleton height="56px" borderRadius="var(--radius-md)" />
@@ -84,7 +76,7 @@ export default function LeaderboardSection() {
           {!loading && isEndpointMissing && (
             <div
               style={{
-                background: "var(--bg-surface)",
+                background: "var(--panel-sim)",
                 border: "1px solid var(--border-subtle)",
                 borderRadius: "var(--radius-lg)",
                 padding: "2.5rem 1.5rem",
@@ -96,8 +88,8 @@ export default function LeaderboardSection() {
                   width: "50px",
                   height: "50px",
                   borderRadius: "50%",
-                  background: "rgba(56, 189, 248, 0.12)",
-                  color: "#38bdf8",
+                  background: "rgba(62, 240, 192, 0.12)",
+                  color: "var(--accent)",
                   display: "inline-flex",
                   alignItems: "center",
                   justifyContent: "center",
@@ -110,15 +102,15 @@ export default function LeaderboardSection() {
                   <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
               </div>
-              <h3 style={{ fontSize: "1.25rem", marginBottom: "0.5rem" }}>Leaderboard not available yet</h3>
-              <p style={{ fontSize: "0.875rem", color: "var(--text-secondary)", maxWidth: "440px", margin: "0 auto 1.5rem" }}>
+              <h3 style={{ fontSize: "1.25rem", marginBottom: "0.5rem", color: "var(--ink)" }}>Leaderboard not available yet</h3>
+              <p style={{ fontSize: "0.875rem", color: "var(--mute)", maxWidth: "440px", margin: "0 auto 1.5rem" }}>
                 The backend route <code>GET /api/leaderboard</code> is currently under development by Vidit. Real community rankings will populate automatically once the endpoint is live.
               </p>
               <button
                 type="button"
                 className="btn btn-secondary"
                 onClick={handleRefresh}
-                style={{ fontSize: "0.8125rem", minHeight: "36px", padding: "0.375rem 0.875rem" }}
+                style={{ fontSize: "0.8125rem", minHeight: "36px", padding: "0.35rem 0.95rem" }}
               >
                 Check again
               </button>
@@ -151,7 +143,7 @@ export default function LeaderboardSection() {
           {!loading && !error && !isEndpointMissing && leaderboard && leaderboard.length > 0 && (
             <div
               style={{
-                background: "var(--bg-surface)",
+                background: "var(--panel-sim)",
                 border: "1px solid var(--border-subtle)",
                 borderRadius: "var(--radius-lg)",
                 overflow: "hidden"
@@ -160,7 +152,7 @@ export default function LeaderboardSection() {
               {leaderboard.map((user, index) => {
                 const rank = user.rank || index + 1;
                 const rankColor =
-                  rank === 1 ? "#fbbf24" : rank === 2 ? "#94a3b8" : rank === 3 ? "#b45309" : "var(--text-muted)";
+                  rank === 1 ? "var(--accent)" : rank === 2 ? "var(--lit-recyclable)" : rank === 3 ? "#fbbf24" : "var(--mute)";
 
                 return (
                   <div
@@ -172,7 +164,7 @@ export default function LeaderboardSection() {
                       padding: "1rem 1.5rem",
                       borderBottom:
                         index < leaderboard.length - 1 ? "1px solid var(--border-subtle)" : "none",
-                      backgroundColor: rank === 1 ? "rgba(251, 191, 36, 0.04)" : "transparent"
+                      backgroundColor: rank === 1 ? "rgba(62, 240, 192, 0.04)" : "transparent"
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
@@ -181,17 +173,17 @@ export default function LeaderboardSection() {
                           width: "32px",
                           fontFamily: "var(--font-mono)",
                           fontWeight: 700,
-                          fontSize: "1.125rem",
+                          fontSize: "1.15rem",
                           color: rankColor
                         }}
                       >
                         #{rank}
                       </span>
                       <div>
-                        <strong style={{ display: "block", color: "var(--text-primary)" }}>
+                        <strong style={{ display: "block", color: "var(--ink)" }}>
                           {user.name || user.username || `Recycler_${rank}`}
                         </strong>
-                        <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>
+                        <span style={{ fontSize: "0.75rem", color: "var(--mute)" }}>
                           {user.badge || (user.itemsCount ? `${user.itemsCount} items sorted` : "Active Contributor")}
                         </span>
                       </div>
@@ -201,14 +193,14 @@ export default function LeaderboardSection() {
                       <span
                         style={{
                           fontFamily: "var(--font-mono)",
-                          fontSize: "1.125rem",
+                          fontSize: "1.15rem",
                           fontWeight: 700,
-                          color: "var(--brand-primary)"
+                          color: "var(--accent)"
                         }}
                       >
                         {user.points || user.ecoPoints || 0}
                       </span>
-                      <span style={{ display: "block", fontSize: "0.6875rem", color: "var(--text-muted)", textTransform: "uppercase" }}>
+                      <span style={{ display: "block", fontSize: "0.6875rem", color: "var(--mute)", textTransform: "uppercase" }}>
                         EcoPoints
                       </span>
                     </div>

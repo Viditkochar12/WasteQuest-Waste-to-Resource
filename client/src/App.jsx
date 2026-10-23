@@ -1,8 +1,7 @@
 import { Suspense, lazy } from "react";
 import { Navbar } from "./components/common/Navbar";
-import { SmartBinHero } from "./components/hero/SmartBinHero";
-import { RoadJourney } from "./components/journey/RoadJourney";
-import { SortingBelt } from "./components/conveyor/SortingBelt";
+import { SmartBinsHero } from "./components/hero/SmartBinsHero";
+import { StackingSection } from "./components/stack/StackingSection";
 import { ScanWorkspace } from "./components/workspace/ScanWorkspace";
 import { Footer } from "./components/common/Footer";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
@@ -28,7 +27,7 @@ export default function App() {
         <aside
           role="alert"
           style={{
-            background: "#b91c1c",
+            background: "#5a1f3f",
             color: "#ffffff",
             padding: "0.625rem 1rem",
             fontSize: "0.875rem",
@@ -36,15 +35,15 @@ export default function App() {
             textAlign: "center"
           }}
         >
-          ⚠️ CONFIGURATION ERROR: <code>VITE_API_BASE_URL</code> is not defined in <code>client/.env</code>.
-          Network requests will fail. Please set <code>VITE_API_BASE_URL=http://localhost:5000/api</code>.
+          ⚠️ CONFIGURATION NOTICE: <code>VITE_API_BASE_URL</code> is not defined in <code>client/.env</code>.
+          Set <code>VITE_API_BASE_URL=http://localhost:5000/api</code> for local backend connectivity.
         </aside>
       )}
 
       {/* Persistent Mock Mode Warning Banner */}
       {IS_MOCK_ENABLED && (
         <aside className="mock-banner" role="status">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
             <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
             <line x1="12" y1="9" x2="12" y2="13" />
             <line x1="12" y1="17" x2="12.01" y2="17" />
@@ -55,37 +54,32 @@ export default function App() {
         </aside>
       )}
 
-      {/* Sticky Accessible Navigation */}
+      {/* Sticky Translucent Navbar with Scroll Progress Bar */}
       <Navbar />
 
-      {/* Main Semantic Landmark */}
+      {/* Main Content Landmark */}
       <main id="main-content">
-        {/* Section 1: Hero - Cursor-Following Smart Bin */}
+        {/* Section 1: Hero — Three Bins Simulation */}
         <ErrorBoundary title="Hero Section Error">
-          <SmartBinHero />
+          <SmartBinsHero />
         </ErrorBoundary>
 
-        {/* Section 2: Road Journey (How it works) */}
-        <ErrorBoundary title="Road Journey Section Error">
-          <RoadJourney />
+        {/* Section 2: Stacking Cards (Organic, Recyclable, Hazardous, Scan CTA) */}
+        <ErrorBoundary title="Resource Streams Section Error">
+          <StackingSection />
         </ErrorBoundary>
 
-        {/* Section 3: Conveyor Sorting Belt */}
-        <ErrorBoundary title="Sorting Belt Section Error">
-          <SortingBelt />
-        </ErrorBoundary>
-
-        {/* Section 4: Scan Workspace (Plain, fast, real data only) */}
+        {/* Section 3: Scan Workspace (Plain, fast, real data only) */}
         <ErrorBoundary title="Scan Workspace Error">
           <ScanWorkspace />
         </ErrorBoundary>
 
-        {/* Section 5: Community Dashboard (Lazy Loaded with Suspense) */}
+        {/* Section 4: Community Dashboard (Lazy Loaded) */}
         <ErrorBoundary title="Dashboard Section Error">
           <Suspense
             fallback={
               <section className="section-wrapper container">
-                <Skeleton height="300px" borderRadius="var(--radius-lg)" />
+                <Skeleton height="320px" borderRadius="var(--radius-lg)" />
               </section>
             }
           >
@@ -93,12 +87,12 @@ export default function App() {
           </Suspense>
         </ErrorBoundary>
 
-        {/* Section 6: EcoRank Leaderboard (Lazy Loaded Independently) */}
+        {/* Section 5: EcoRank Leaderboard (Lazy Loaded Independently) */}
         <ErrorBoundary title="Leaderboard Section Error">
           <Suspense
             fallback={
               <section className="section-wrapper container">
-                <Skeleton height="260px" borderRadius="var(--radius-lg)" />
+                <Skeleton height="280px" borderRadius="var(--radius-lg)" />
               </section>
             }
           >

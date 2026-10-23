@@ -82,6 +82,7 @@ async function safeFetch(url, options = {}) {
     return {
       ok: true,
       data: body.data !== undefined ? body.data : body,
+      pagination: body.pagination || null,
       status: response.status
     };
   } catch (err) {
@@ -150,7 +151,7 @@ export async function classifyImage(file, { signal, timeoutMs = 30000 } = {}) {
 
   // Simulated mock fallback if explicit VITE_USE_MOCK=true is active
   if (IS_MOCK_ENABLED) {
-    await new Promise((resolve) => setTimeout(resolve, 900));
+    await new Promise((resolve) => setTimeout(resolve, 800));
     return {
       ok: true,
       data: {
@@ -181,7 +182,6 @@ export async function classifyImage(file, { signal, timeoutMs = 30000 } = {}) {
   const controller = new AbortController();
   const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
 
-  // Link caller signal if passed
   if (signal) {
     signal.addEventListener("abort", () => controller.abort());
   }
@@ -197,7 +197,6 @@ export async function classifyImage(file, { signal, timeoutMs = 30000 } = {}) {
       // Note: NEVER set Content-Type header manually for multipart/form-data!
     });
 
-    // Validate result data shape
     if (res.ok && res.data) {
       const { category, confidence } = res.data;
       if (!category) {
@@ -210,7 +209,6 @@ export async function classifyImage(file, { signal, timeoutMs = 30000 } = {}) {
           }
         };
       }
-      // Ensure confidence is clamped between 0 and 1 or marked invalid
       let validConfidence = null;
       if (typeof confidence === "number" && !Number.isNaN(confidence)) {
         validConfidence = Math.max(0, Math.min(1, confidence));
@@ -225,12 +223,12 @@ export async function classifyImage(file, { signal, timeoutMs = 30000 } = {}) {
 }
 
 /**
- * List Reports
- * GET /api/reports
+ * List Reports with pagination and optional filters
+ * GET /api/reports?page=1&limit=10&category=...&status=...
  */
-export async function getReports({ signal } = {}) {
+export async function getReports({ page, limit, category, status, signal } = {}) {
   if (IS_MOCK_ENABLED) {
-    await new Promise((res) => setTimeout(res, 500));
+    await new Promise((res) => setTimeout(res, 400));
     return {
       ok: true,
       data: [
@@ -239,16 +237,32 @@ export async function getReports({ signal } = {}) {
           category: "plastic",
           confidence: 0.95,
           recyclable: true,
-          disposalAdvice: "Rinse and place in dry bin.",
-          location: { latitude: 37.7749, longitude: -122.4194 },
+          disposalAdvice: "Rinse and place in dry recyclables bin.",
           createdAt: new Date().toISOString(),
           _isMock: true
         }
-      ]
+      ],
+      pagination: {
+        page: 1,
+        limit: 10,
+        totalReports: 1,
+        totalPages: 1,
+        hasNextPage: false,
+        hasPreviousPage: false
+      }
     };
   }
 
-  return safeFetch(`${API_BASE_URL}/reports`, {
+  const query = new URLSearchParams();
+  if (page !== undefined && page !== null) query.set("page", String(page));
+  if (limit !== undefined && limit !== null) query.set("limit", String(limit));
+  if (category) query.set("category", String(category));
+  if (status) query.set("status", String(status));
+
+  const queryString = query.toString();
+  const url = `${API_BASE_URL}/reports${queryString ? `?${queryString}` : ""}`;
+
+  return safeFetch(url, {
     method: "GET",
     signal,
     headers: {
@@ -263,7 +277,7 @@ export async function getReports({ signal } = {}) {
  */
 export async function createReport(reportPayload, { signal } = {}) {
   if (IS_MOCK_ENABLED) {
-    await new Promise((res) => setTimeout(res, 600));
+    await new Promise((res) => setTimeout(res, 500));
     return {
       ok: true,
       data: {
@@ -304,15 +318,27 @@ export async function getLeaderboard({ signal } = {}) {
     };
   }
 
-  const res = await safeFetch(`${API_BASE_URL}/leaderboard`, {
+  return safeFetch(`${API_BASE_URL}/leaderboard`, {
     method: "GET",
     signal,
     headers: {
       Accept: "application/json"
     }
   });
+}
 
-  return res;
+/**
+ * Get current user profile (if auth is enabled)
+ * GET /api/users/me
+ */
+export async function getMe({ signal } = {}) {
+  return safeFetch(`${API_BASE_URL}/users/me`, {
+    method: "GET",
+    signal,
+    headers: {
+      Accept: "application/json"
+    }
+  });
 }
 
 /**

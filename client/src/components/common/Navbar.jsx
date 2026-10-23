@@ -3,8 +3,32 @@ import { getHealth } from "../../services/api";
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [serverHealth, setServerHealth] = useState({ status: "checking", label: "Checking server" });
+  const [scrollProgress, setScrollProgress] = useState(0);
+  const [serverHealth, setServerHealth] = useState({ status: "checking", label: "Checking API" });
 
+  // Passive rAF scroll progress calculation
+  useEffect(() => {
+    let rafId = null;
+
+    const handleScroll = () => {
+      if (rafId) return;
+      rafId = requestAnimationFrame(() => {
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
+        const progress = scrollHeight > 0 ? (scrollTop / scrollHeight) * 100 : 0;
+        setScrollProgress(Math.min(100, Math.max(0, progress)));
+        rafId = null;
+      });
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+      if (rafId) cancelAnimationFrame(rafId);
+    };
+  }, []);
+
+  // Health check on mount
   useEffect(() => {
     let mounted = true;
     const controller = new AbortController();
@@ -17,12 +41,12 @@ export function Navbar() {
         const isDbConnected = res.data?.database === "connected";
         setServerHealth({
           status: isDbConnected ? "online" : "warning",
-          label: isDbConnected ? "API & DB Online" : "Server Online (DB offline)"
+          label: isDbConnected ? "API & DB Online" : "API Live (DB offline)"
         });
       } else {
         setServerHealth({
           status: "offline",
-          label: "Backend Offline"
+          label: "API Offline"
         });
       }
     }
@@ -37,21 +61,20 @@ export function Navbar() {
     };
   }, []);
 
-  // Handle escape key to close mobile menu
+  // Escape key closes mobile menu
   useEffect(() => {
-    function handleKeyDown(e) {
+    const handleKeyDown = (e) => {
       if (e.key === "Escape" && mobileMenuOpen) {
         setMobileMenuOpen(false);
       }
-    }
+    };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [mobileMenuOpen]);
 
   const navLinks = [
-    { href: "#scan-workspace", label: "Scan Waste", primary: true },
-    { href: "#road-journey", label: "How it works" },
-    { href: "#sorting-belt", label: "Sorting Belt" },
+    { href: "#streams", label: "Resource streams" },
+    { href: "#scan-workspace", label: "Scan waste", primary: true },
     { href: "#dashboard", label: "Reports" },
     { href: "#leaderboard", label: "Leaderboard" }
   ];
@@ -62,9 +85,9 @@ export function Navbar() {
         position: "sticky",
         top: 0,
         zIndex: 900,
-        backgroundColor: "var(--bg-surface-glass)",
-        backdropFilter: "blur(12px)",
-        WebkitBackdropFilter: "blur(12px)",
+        backgroundColor: "rgba(14, 17, 36, 0.85)",
+        backdropFilter: "blur(14px)",
+        WebkitBackdropFilter: "blur(14px)",
         borderBottom: "1px solid var(--border-subtle)"
       }}
     >
@@ -85,29 +108,29 @@ export function Navbar() {
             alignItems: "center",
             gap: "0.75rem",
             textDecoration: "none",
-            color: "var(--text-primary)"
+            color: "var(--ink)"
           }}
           aria-label="WasteQuest Home"
         >
           <div
             style={{
-              width: "38px",
-              height: "38px",
+              width: "36px",
+              height: "36px",
               borderRadius: "10px",
-              background: "linear-gradient(135deg, #10b981 0%, #047857 100%)",
+              background: "var(--accent)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              boxShadow: "0 0 16px rgba(16, 185, 129, 0.35)"
+              boxShadow: "0 0 16px rgba(62, 240, 192, 0.4)"
             }}
           >
             <svg
-              width="22"
-              height="22"
+              width="20"
+              height="20"
               viewBox="0 0 24 24"
               fill="none"
-              stroke="#ffffff"
-              strokeWidth="2.5"
+              stroke="#0e1124"
+              strokeWidth="2.75"
               strokeLinecap="round"
               strokeLinejoin="round"
               aria-hidden="true"
@@ -121,25 +144,25 @@ export function Navbar() {
           </div>
           <span
             style={{
-              fontFamily: "var(--font-display)",
+              fontFamily: "var(--font-heading)",
               fontWeight: 800,
-              fontSize: "1.375rem",
-              letterSpacing: "-0.03em"
+              fontSize: "1.35rem",
+              letterSpacing: "-0.02em"
             }}
           >
-            Waste<span style={{ color: "var(--brand-primary)" }}>Quest</span>
+            Waste<span style={{ color: "var(--accent)" }}>Quest</span>
           </span>
         </a>
 
-        {/* Desktop Navigation Links */}
+        {/* Desktop Navigation */}
         <nav
-          aria-label="Primary Navigation"
+          aria-label="Main Navigation"
+          className="desktop-nav"
           style={{
             display: "none",
             alignItems: "center",
             gap: "1.75rem"
           }}
-          className="desktop-nav"
         >
           {navLinks.map((link) => (
             <a
@@ -149,14 +172,15 @@ export function Navbar() {
               style={
                 !link.primary
                   ? {
-                      color: "var(--text-secondary)",
+                      color: "var(--mute)",
                       fontWeight: 500,
                       fontSize: "0.9375rem",
-                      transition: "color var(--transition-fast)"
+                      textDecoration: "none",
+                      transition: "color 150ms ease"
                     }
                   : {
                       fontSize: "0.875rem",
-                      padding: "0.5rem 1rem",
+                      padding: "0.45rem 1.15rem",
                       minHeight: "38px"
                     }
               }
@@ -165,20 +189,20 @@ export function Navbar() {
             </a>
           ))}
 
-          {/* Health pill */}
+          {/* Health indicator pill */}
           <div
             title={`Backend Status: ${serverHealth.label}`}
             style={{
               display: "inline-flex",
               alignItems: "center",
-              gap: "0.375rem",
+              gap: "0.45rem",
               fontSize: "0.75rem",
               fontFamily: "var(--font-mono)",
-              padding: "0.25rem 0.625rem",
-              borderRadius: "var(--radius-full)",
-              background: "rgba(255, 255, 255, 0.05)",
+              padding: "0.25rem 0.65rem",
+              borderRadius: "var(--radius-pill)",
+              background: "rgba(255, 255, 255, 0.06)",
               border: "1px solid var(--border-subtle)",
-              color: "var(--text-secondary)"
+              color: "var(--mute)"
             }}
           >
             <span
@@ -188,28 +212,32 @@ export function Navbar() {
                 borderRadius: "50%",
                 backgroundColor:
                   serverHealth.status === "online"
-                    ? "var(--brand-primary)"
+                    ? "var(--accent)"
                     : serverHealth.status === "warning"
                     ? "var(--status-warning)"
                     : "var(--status-danger)",
                 boxShadow:
-                  serverHealth.status === "online"
-                    ? "0 0 8px var(--brand-primary)"
-                    : "none"
+                  serverHealth.status === "online" ? "0 0 8px var(--accent)" : "none"
               }}
             />
-            <span>{serverHealth.status === "online" ? "API Live" : serverHealth.status === "warning" ? "DB Disconnected" : "API Offline"}</span>
+            <span>
+              {serverHealth.status === "online"
+                ? "API Live"
+                : serverHealth.status === "warning"
+                ? "DB Disconnected"
+                : "API Offline"}
+            </span>
           </div>
         </nav>
 
-        {/* Mobile Hamburger Button */}
+        {/* Mobile Hamburger Toggle */}
         <button
           type="button"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-expanded={mobileMenuOpen}
-          aria-controls="mobile-navigation"
-          aria-label={mobileMenuOpen ? "Close menu" : "Open menu"}
-          className="mobile-menu-btn"
+          aria-controls="mobile-nav"
+          aria-label={mobileMenuOpen ? "Close navigation menu" : "Open navigation menu"}
+          className="mobile-toggle"
           style={{
             display: "flex",
             alignItems: "center",
@@ -218,18 +246,18 @@ export function Navbar() {
             height: "44px",
             background: "transparent",
             border: "1px solid var(--border-subtle)",
-            borderRadius: "var(--radius-md)",
-            color: "var(--text-primary)",
+            borderRadius: "var(--radius-sm)",
+            color: "var(--ink)",
             cursor: "pointer"
           }}
         >
           {mobileMenuOpen ? (
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
               <line x1="18" y1="6" x2="6" y2="18" />
               <line x1="6" y1="6" x2="18" y2="18" />
             </svg>
           ) : (
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
               <line x1="4" y1="12" x2="20" y2="12" />
               <line x1="4" y1="6" x2="20" y2="6" />
               <line x1="4" y1="18" x2="20" y2="18" />
@@ -241,14 +269,14 @@ export function Navbar() {
       {/* Mobile Drawer */}
       {mobileMenuOpen && (
         <div
-          id="mobile-navigation"
+          id="mobile-nav"
           style={{
             borderTop: "1px solid var(--border-subtle)",
-            backgroundColor: "var(--bg-surface)",
+            backgroundColor: "var(--bg)",
             padding: "1.25rem 1.5rem 2rem",
             display: "flex",
             flexDirection: "column",
-            gap: "1rem"
+            gap: "0.875rem"
           }}
         >
           {navLinks.map((link) => (
@@ -259,54 +287,51 @@ export function Navbar() {
               className={link.primary ? "btn btn-primary" : "btn btn-secondary"}
               style={{
                 justifyContent: "flex-start",
-                padding: "0.875rem 1.25rem"
+                padding: "0.85rem 1.25rem"
               }}
             >
               {link.label}
             </a>
           ))}
-
           <div
             style={{
               paddingTop: "0.75rem",
               borderTop: "1px solid var(--border-subtle)",
-              display: "flex",
-              alignItems: "center",
-              gap: "0.5rem",
               fontSize: "0.8125rem",
-              color: "var(--text-muted)"
+              color: "var(--mute)"
             }}
           >
-            <span
-              style={{
-                width: "8px",
-                height: "8px",
-                borderRadius: "50%",
-                backgroundColor:
-                  serverHealth.status === "online"
-                    ? "var(--brand-primary)"
-                    : serverHealth.status === "warning"
-                    ? "var(--status-warning)"
-                    : "var(--status-danger)"
-              }}
-            />
-            <span>Backend: {serverHealth.label}</span>
+            Backend: {serverHealth.label}
           </div>
         </div>
       )}
 
-      {/* Media query helper styles */}
+      {/* Aqua Scroll Progress Bar */}
+      <div
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          height: "3px",
+          width: `${scrollProgress}%`,
+          background: "var(--accent)",
+          boxShadow: "0 0 10px var(--accent)",
+          transition: "width 80ms linear"
+        }}
+        aria-hidden="true"
+      />
+
       <style>{`
         @media (min-width: 860px) {
           .desktop-nav {
             display: flex !important;
           }
-          .mobile-menu-btn {
+          .mobile-toggle {
             display: none !important;
           }
         }
         .nav-link:hover {
-          color: var(--brand-primary) !important;
+          color: var(--accent) !important;
         }
       `}</style>
     </header>
