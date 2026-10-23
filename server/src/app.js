@@ -14,6 +14,15 @@ app.use(
 app.use(express.json({ limit: "100kb" }));
 
 app.use("/api/health", healthRoutes);
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: {
+      code: "ROUTE_NOT_FOUND",
+      message: "The requested API route was not found."
+    }
+  });
+});
 app.use(errorHandler);
 
 module.exports = app;
