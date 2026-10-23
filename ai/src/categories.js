@@ -1,6 +1,12 @@
+const { ErrorCodes, AIClassificationError } = require("./errors");
+
 /**
  * Waste Categories, Downstream Routing, and Environmental Impact Metadata
  * Aligned with Hackathon Track ST-01: Waste to Resource
+ *
+ * NOTE: Recyclability is a generic category-level recommendation,
+ * not verification of local recycling acceptance. Specific acceptance
+ * depends on municipal recovery facilities and local regulations.
  */
 
 const CANONICAL_CATEGORIES = {
@@ -13,7 +19,7 @@ const CANONICAL_CATEGORIES = {
   general: "general"
 };
 
-// Aliases mapping (e.g. e-waste -> e_waste)
+// Explicit category aliases normalized to canonical labels
 const CATEGORY_ALIASES = {
   "e-waste": "e_waste",
   "ewaste": "e_waste",
@@ -32,6 +38,7 @@ const CATEGORY_ALIASES = {
 
 /**
  * Metadata for each canonical waste stream
+ * Provides category-level recyclability and disposal advice mappings.
  */
 const WASTE_GUIDELINES = {
   [CANONICAL_CATEGORIES.plastic]: {
@@ -155,35 +162,56 @@ const WASTE_GUIDELINES = {
 };
 
 /**
- * Normalizes input label into standard canonical category
+ * Normalizes input label into standard canonical category.
+ * Returns null if the category is not recognized.
+ * Rejects unknown categories instead of silently falling back to general.
+ *
+ * @param {string} label
+ * @returns {string|null}
  */
 function normalizeCategory(label) {
-  if (!label || typeof label !== "string") return CANONICAL_CATEGORIES.general;
-  const cleaned = label.trim().toLowerCase().replace(/[\s-]+/g, "_");
-
-  if (CANONICAL_CATEGORIES[cleaned]) {
-    return CANONICAL_CATEGORIES[cleaned];
+  if (!label || typeof label !== "string") {
+    return null;
   }
 
-  // Check aliases
-  if (CATEGORY_ALIASES[cleaned]) {
-    return CATEGORY_ALIASES[cleaned];
-  }
-
-  // Direct alias check without underscore
   const rawCleaned = label.trim().toLowerCase();
+  const cleanedWithUnderscores = rawCleaned.replace(/[\s-]+/g, "_");
+
+  // Check canonical direct match
+  if (CANONICAL_CATEGORIES[cleanedWithUnderscores]) {
+    return CANONICAL_CATEGORIES[cleanedWithUnderscores];
+  }
+
+  // Check aliases with underscores (e.g., "e_waste", "card_board")
+  if (CATEGORY_ALIASES[cleanedWithUnderscores]) {
+    return CATEGORY_ALIASES[cleanedWithUnderscores];
+  }
+
+  // Check aliases directly (e.g., "e-waste", "cardboard")
   if (CATEGORY_ALIASES[rawCleaned]) {
     return CATEGORY_ALIASES[rawCleaned];
   }
 
-  return CANONICAL_CATEGORIES.general;
+  return null;
 }
 
 /**
- * Retrieves guidelines and environmental impact for a category
+ * Retrieves guidelines and environmental impact for a category.
+ * Throws UNKNOWN_CATEGORY AIClassificationError if the category cannot be resolved.
+ *
+ * @param {string} category
+ * @returns {Object}
  */
 function getGuidanceForCategory(category) {
   const canonical = normalizeCategory(category);
+
+  if (!canonical || !WASTE_GUIDELINES[canonical]) {
+    throw new AIClassificationError(
+      ErrorCodes.UNKNOWN_CATEGORY,
+      `Unrecognized waste category '${category}'. Must be one of: ${Object.values(CANONICAL_CATEGORIES).join(", ")}.`
+    );
+  }
+
   return {
     canonicalCategory: canonical,
     ...WASTE_GUIDELINES[canonical]

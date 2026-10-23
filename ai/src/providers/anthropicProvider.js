@@ -4,11 +4,11 @@
 
 class AnthropicProvider {
   constructor(apiKey, model = "claude-3-5-sonnet-20241022") {
-    if (!apiKey) {
+    if (!apiKey || typeof apiKey !== "string" || !apiKey.trim()) {
       throw new Error("ANTHROPIC_API_KEY is required for AnthropicProvider");
     }
-    this.apiKey = apiKey;
-    this.model = model;
+    this.apiKey = apiKey.trim();
+    this.model = model || "claude-3-5-sonnet-20241022";
     this.name = "anthropic";
   }
 
@@ -71,8 +71,7 @@ Respond ONLY with a valid raw JSON object (no markdown, no backticks, no code bl
     });
 
     if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Anthropic API error [${response.status}]: ${errText}`);
+      throw new Error(`Anthropic Vision API request failed with status ${response.status}`);
     }
 
     const json = await response.json();
@@ -82,12 +81,21 @@ Respond ONLY with a valid raw JSON object (no markdown, no backticks, no code bl
       throw new Error("Empty response received from Anthropic Vision model");
     }
 
-    const cleanJson = rawContent.replace(/```(?:json)?/g, "").replace(/```/g, "").trim();
-    const parsed = JSON.parse(cleanJson);
+    let parsed;
+    try {
+      parsed = JSON.parse(rawContent.trim());
+    } catch {
+      const cleanJson = rawContent.replace(/```(?:json)?/g, "").replace(/```/g, "").trim();
+      parsed = JSON.parse(cleanJson);
+    }
+
+    if (!parsed || typeof parsed !== "object") {
+      throw new Error("Invalid response format received from Anthropic Vision model");
+    }
 
     return {
       category: parsed.category,
-      confidence: Number(parsed.confidence) || 0.85,
+      confidence: parsed.confidence,
       isWaste: parsed.isWaste !== undefined ? Boolean(parsed.isWaste) : true,
       itemDescription: parsed.itemDescription || "Identified waste item"
     };

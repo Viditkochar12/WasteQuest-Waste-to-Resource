@@ -137,15 +137,32 @@ interface ClassificationInput {
 
 ## ⚙️ Environment Variables
 
+## Environment Variables
+
 | Variable | Description | Default |
 |---|---|---|
-| `GEMINI_API_KEY` | Google Gemini API key (recommended for fast vision inference) | Optional (falls back to mock if not set) |
-| `ANTHROPIC_API_KEY` | Anthropic Claude API key | Optional |
-| `AI_PROVIDER` | Explicit provider selection (`gemini`, `anthropic`, `mock`) | Automatic |
-| `CONFIDENCE_THRESHOLD` | Minimum confidence required (0.0 - 1.0) | `0.5` |
-| `MAX_IMAGE_SIZE_MB` | Maximum allowed file size in MB | `5` |
+| `WASTEQUEST_AI_PROVIDER` | Preferred explicit provider selection: `gemini`, `anthropic`, or `mock` | Automatically selects a configured real provider |
+| `AI_PROVIDER` | Alternative provider selection if `WASTEQUEST_AI_PROVIDER` is not set | Unset |
+| `GEMINI_API_KEY` | Google Gemini API key | Unset |
+| `GEMINI_MODEL` | Gemini vision model name | `gemini-1.5-flash` |
+| `ANTHROPIC_API_KEY` | Anthropic API key | Unset |
+| `ANTHROPIC_MODEL` | Anthropic vision model name | Configured provider default |
+| `CONFIDENCE_THRESHOLD` | Minimum accepted confidence, from 0 to 1 | `0.5` |
+| `MAX_IMAGE_SIZE_MB` | Maximum accepted image size in MB | `5` |
+| `NODE_ENV` | Runtime environment; mock mode is rejected in production | Environment-dependent |
 
----
+### Provider configuration
+
+For real classification, configure a supported provider and its API key.
+
+For local development or tests only, mock classification can be explicitly enabled using:
+
+`WASTEQUEST_AI_PROVIDER=mock`
+
+Mock mode must never be used in production. If no real provider is configured, the classifier returns `PROVIDER_UNAVAILABLE` rather than silently producing simulated results.
+
+Never commit API keys or the local `.env` file.
+
 
 ## 🧪 Testing
 ```bash

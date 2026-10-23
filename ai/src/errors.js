@@ -7,23 +7,25 @@ const ErrorCodes = {
   INVALID_IMAGE: "INVALID_IMAGE",
   NOT_WASTE: "NOT_WASTE",
   LOW_CONFIDENCE: "LOW_CONFIDENCE",
-  INFERENCE_FAILED: "INFERENCE_FAILED",
-  MISSING_INPUT: "MISSING_INPUT"
+  UNKNOWN_CATEGORY: "UNKNOWN_CATEGORY",
+  PROVIDER_UNAVAILABLE: "PROVIDER_UNAVAILABLE",
+  INFERENCE_FAILED: "INFERENCE_FAILED"
 };
 
+/**
+ * Custom error class for WasteQuest AI operations
+ */
 class AIClassificationError extends Error {
-  constructor(code, message, details = null) {
+  constructor(code, message) {
     super(message);
     this.name = "AIClassificationError";
     this.code = code;
-    this.details = details;
   }
 
   toJSON() {
     return {
       code: this.code,
-      message: this.message,
-      ...(this.details ? { details: this.details } : {})
+      message: this.message
     };
   }
 }

@@ -4,17 +4,17 @@
 
 class GeminiProvider {
   constructor(apiKey, model = "gemini-1.5-flash") {
-    if (!apiKey) {
+    if (!apiKey || typeof apiKey !== "string" || !apiKey.trim()) {
       throw new Error("GEMINI_API_KEY is required for GeminiProvider");
     }
-    this.apiKey = apiKey;
-    this.model = model;
+    this.apiKey = apiKey.trim();
+    this.model = model || "gemini-1.5-flash";
     this.name = "gemini";
   }
 
   async classify(buffer, mimeType) {
     const base64Data = buffer.toString("base64");
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`;
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(this.model)}:generateContent`;
 
     const promptText = `
 You are an expert waste classification computer vision model for the WasteQuest recycling application.
@@ -58,13 +58,15 @@ Respond ONLY with a valid raw JSON object (no markdown, no backticks, no code bl
 
     const response = await fetch(endpoint, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "x-goog-api-key": this.apiKey
+      },
       body: JSON.stringify(requestBody)
     });
 
     if (!response.ok) {
-      const errText = await response.text();
-      throw new Error(`Gemini API error [${response.status}]: ${errText}`);
+      throw new Error(`Gemini Vision API request failed with status ${response.status}`);
     }
 
     const json = await response.json();
@@ -74,25 +76,25 @@ Respond ONLY with a valid raw JSON object (no markdown, no backticks, no code bl
       throw new Error("Empty response received from Gemini Vision model");
     }
 
+    let parsed;
     try {
-      const parsed = JSON.parse(rawContent.trim());
-      return {
-        category: parsed.category,
-        confidence: Number(parsed.confidence) || 0.8,
-        isWaste: parsed.isWaste !== undefined ? Boolean(parsed.isWaste) : true,
-        itemDescription: parsed.itemDescription || "Identified waste item"
-      };
+      parsed = JSON.parse(rawContent.trim());
     } catch {
       // Fallback in case JSON was wrapped in markdown blocks
       const cleanJson = rawContent.replace(/```(?:json)?/g, "").replace(/```/g, "").trim();
-      const parsed = JSON.parse(cleanJson);
-      return {
-        category: parsed.category,
-        confidence: Number(parsed.confidence) || 0.8,
-        isWaste: parsed.isWaste !== undefined ? Boolean(parsed.isWaste) : true,
-        itemDescription: parsed.itemDescription || "Identified waste item"
-      };
+      parsed = JSON.parse(cleanJson);
     }
+
+    if (!parsed || typeof parsed !== "object") {
+      throw new Error("Invalid response format received from Gemini Vision model");
+    }
+
+    return {
+      category: parsed.category,
+      confidence: parsed.confidence,
+      isWaste: parsed.isWaste !== undefined ? Boolean(parsed.isWaste) : true,
+      itemDescription: parsed.itemDescription || "Identified waste item"
+    };
   }
 }
 

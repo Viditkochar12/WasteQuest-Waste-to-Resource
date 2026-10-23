@@ -3,6 +3,11 @@
  * Run via: npm run demo
  */
 
+// Enable mock mode for demonstration if no live provider is configured
+if (!process.env.GEMINI_API_KEY && !process.env.ANTHROPIC_API_KEY && !process.env.WASTEQUEST_AI_PROVIDER) {
+  process.env.WASTEQUEST_AI_PROVIDER = "mock";
+}
+
 const { classifyWaste } = require("../src/classifyWaste");
 const { MINIMAL_PNG } = require("../tests/mockImages");
 
@@ -11,7 +16,9 @@ async function runDemo() {
   console.log("       WasteQuest AI Classification Demo          ");
   console.log("==================================================\n");
 
-  console.log("[1] Testing classification on simulated waste image...");
+  const mode = process.env.WASTEQUEST_AI_PROVIDER === "mock" ? "MOCK MODE (Simulated)" : "LIVE VISION MODEL";
+  console.log(`[1] Running in ${mode}...`);
+  console.log("    Testing classification on simulated waste image...");
 
   const result = await classifyWaste({
     buffer: MINIMAL_PNG,

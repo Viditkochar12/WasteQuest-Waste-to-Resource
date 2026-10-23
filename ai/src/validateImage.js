@@ -10,14 +10,17 @@ const SUPPORTED_MIME_TYPES = new Set([
 const DEFAULT_MAX_SIZE_MB = 5;
 
 /**
- * Validates an image buffer and mime type
+ * Validates an image buffer and MIME type.
+ *
  * @param {Object} input - { buffer: Buffer, mimeType: string }
- * @param {Object} options - { maxSizeBytes?: number }
+ * @param {Object} [options] - Optional configurations
+ * @param {number} [options.maxSizeMB] - Maximum file size in MB
+ * @returns {Object} Validation summary
  */
 function validateImageInput(input, options = {}) {
-  if (!input) {
+  if (!input || typeof input !== "object") {
     throw new AIClassificationError(
-      ErrorCodes.MISSING_INPUT,
+      ErrorCodes.INVALID_IMAGE,
       "Input object is required. Provide { buffer, mimeType }."
     );
   }
@@ -31,7 +34,14 @@ function validateImageInput(input, options = {}) {
     );
   }
 
-  const normalizedMime = (mimeType || "").trim().toLowerCase();
+  if (!mimeType || typeof mimeType !== "string") {
+    throw new AIClassificationError(
+      ErrorCodes.INVALID_FILE_TYPE,
+      "A valid image MIME type string is required."
+    );
+  }
+
+  const normalizedMime = mimeType.trim().toLowerCase();
   if (!SUPPORTED_MIME_TYPES.has(normalizedMime)) {
     throw new AIClassificationError(
       ErrorCodes.INVALID_FILE_TYPE,
@@ -39,7 +49,18 @@ function validateImageInput(input, options = {}) {
     );
   }
 
-  const maxSizeMB = options.maxSizeMB || Number(process.env.MAX_IMAGE_SIZE_MB) || DEFAULT_MAX_SIZE_MB;
+  const configuredMaxSize =
+    options.maxSizeMB !== undefined
+      ? Number(options.maxSizeMB)
+      : process.env.MAX_IMAGE_SIZE_MB !== undefined
+        ? Number(process.env.MAX_IMAGE_SIZE_MB)
+        : DEFAULT_MAX_SIZE_MB;
+
+  const maxSizeMB =
+    Number.isFinite(configuredMaxSize) && configuredMaxSize > 0
+      ? configuredMaxSize
+      : DEFAULT_MAX_SIZE_MB;
+
   const maxBytes = maxSizeMB * 1024 * 1024;
 
   if (buffer.length > maxBytes) {
@@ -49,7 +70,7 @@ function validateImageInput(input, options = {}) {
     );
   }
 
-  // Quick magic bytes verification
+  // Header signature verification
   verifyMagicBytes(buffer, normalizedMime);
 
   return {
@@ -60,7 +81,7 @@ function validateImageInput(input, options = {}) {
 }
 
 /**
- * Basic check for common image header signatures
+ * Header magic byte validation for supported image formats
  */
 function verifyMagicBytes(buffer, mimeType) {
   if (buffer.length < 4) {
@@ -97,6 +118,13 @@ function verifyMagicBytes(buffer, mimeType) {
 
   // WEBP magic bytes: RIFF....WEBP
   if (mimeType === "image/webp") {
+    if (buffer.length < 12) {
+      throw new AIClassificationError(
+        ErrorCodes.INVALID_IMAGE,
+        "Buffer is too small to contain valid WEBP image data."
+      );
+    }
+
     const isRiff = buffer.toString("ascii", 0, 4) === "RIFF";
     const isWebp = buffer.toString("ascii", 8, 12) === "WEBP";
     if (!isRiff || !isWebp) {
@@ -110,6 +138,7 @@ function verifyMagicBytes(buffer, mimeType) {
 
 module.exports = {
   validateImageInput,
+  verifyMagicBytes,
   SUPPORTED_MIME_TYPES,
   DEFAULT_MAX_SIZE_MB
 };
