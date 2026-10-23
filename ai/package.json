@@ -1,0 +1,20 @@
+{
+  "name": "wastequest-ai",
+  "version": "1.0.0",
+  "description": "WasteQuest AI classification engine for waste-to-resource segregation and tracking",
+  "main": "src/classifyWaste.js",
+  "scripts": {
+    "test": "node --test tests/classifyWaste.test.js",
+    "demo": "node examples/demo.js"
+  },
+  "keywords": [
+    "waste",
+    "recycling",
+    "classification",
+    "computer-vision",
+    "sustainability",
+    "hackathon"
+  ],
+  "author": "Virendra Singh",
+  "license": "ISC"
+}
