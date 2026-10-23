@@ -2,7 +2,7 @@ const errorHandler = require("./middleware/error.middleware");
 const express = require("express");
 const cors = require("cors");
 const healthRoutes = require("./routes/health.routes");
-
+const reportsRoutes = require("./routes/reports.routes");
 const app = express();
 
 app.use(
@@ -14,6 +14,7 @@ app.use(
 app.use(express.json({ limit: "100kb" }));
 
 app.use("/api/health", healthRoutes);
+app.use("/api/reports", reportsRoutes);
 app.use((req, res) => {
   res.status(404).json({
     success: false,
