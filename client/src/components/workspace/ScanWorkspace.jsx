@@ -480,7 +480,7 @@ export function ScanWorkspace() {
                   maxHeight: "340px",
                   borderRadius: "var(--radius-md)",
                   overflow: "hidden",
-                  background: "#050a07",
+                  background: "var(--surface-2)",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center"
@@ -564,7 +564,7 @@ export function ScanWorkspace() {
                           width: "16px",
                           height: "16px",
                           border: "2px solid rgba(0,0,0,0.2)",
-                          borderTopColor: "#000",
+                          borderTopColor: "var(--accent-text)",
                           borderRadius: "50%",
                           animation: "spin 0.8s linear infinite"
                         }}
@@ -585,10 +585,10 @@ export function ScanWorkspace() {
               role="alert"
               style={{
                 background: "var(--status-danger-bg)",
-                border: "1px solid rgba(239, 68, 68, 0.35)",
+                border: "1px solid var(--border-subtle)",
                 borderRadius: "var(--radius-md)",
                 padding: "1.25rem 1.5rem",
-                color: "#fecaca"
+                color: "var(--text-primary)"
               }}
             >
               <div style={{ display: "flex", alignItems: "flex-start", gap: "0.75rem" }}>
@@ -597,7 +597,7 @@ export function ScanWorkspace() {
                   height="22"
                   viewBox="0 0 24 24"
                   fill="none"
-                  stroke="#ef4444"
+                  stroke="var(--status-danger)"
                   strokeWidth="2"
                   style={{ flexShrink: 0, marginTop: "2px" }}
                 >
@@ -607,27 +607,27 @@ export function ScanWorkspace() {
                 </svg>
                 <div style={{ flex: 1 }}>
                   <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginBottom: "0.25rem" }}>
-                    <strong style={{ color: "#f87171" }}>Scan Unsuccessful</strong>
+                    <strong style={{ color: "var(--status-danger)" }}>Scan Unsuccessful</strong>
                     {errorCode && (
                       <span
                         style={{
                           fontFamily: "var(--font-mono)",
                           fontSize: "0.6875rem",
-                          background: "rgba(239, 68, 68, 0.2)",
+                          background: "var(--status-danger-bg)",
                           padding: "0.125rem 0.375rem",
                           borderRadius: "3px",
-                          color: "#fca5a5"
+                          color: "var(--status-danger)"
                         }}
                       >
                         {errorCode}
                       </span>
                     )}
                   </div>
-                  <p style={{ color: "#fca5a5", fontSize: "0.875rem", margin: 0, wordBreak: "break-word" }}>
+                  <p style={{ color: "var(--text-primary)", fontSize: "0.875rem", margin: 0, wordBreak: "break-word" }}>
                     {errorMessage}
                   </p>
                   {errorCode === "ROUTE_NOT_FOUND" && (
-                    <div style={{ marginTop: "0.75rem", fontSize: "0.8125rem", color: "#fecaca" }}>
+                    <div style={{ marginTop: "0.75rem", fontSize: "0.8125rem", color: "var(--text-secondary)" }}>
                       <em>Note: The backend has not mounted <code>POST /api/classify</code> yet. Toggle <code>VITE_USE_MOCK=true</code> in <code>client/.env</code> if you want to preview UI classification results while waiting for backend deployment.</em>
                     </div>
                   )}
@@ -638,8 +638,8 @@ export function ScanWorkspace() {
                       onClick={handleClassify}
                       style={{
                         marginTop: "1rem",
-                        borderColor: "rgba(239, 68, 68, 0.4)",
-                        color: "#fff",
+                        borderColor: "var(--border-subtle)",
+                        color: "var(--text-primary)",
                         fontSize: "0.8125rem",
                         padding: "0.375rem 0.875rem",
                         minHeight: "36px"

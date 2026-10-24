@@ -40,7 +40,7 @@ export function Skeleton({ width = "100%", height = "20px", borderRadius = "var(
         width,
         height,
         borderRadius,
-        background: "linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 75%)",
+        background: "var(--skeleton-gradient)",
         backgroundSize: "200% 100%",
         animation: "skeletonShimmer 1.8s infinite ease-in-out",
         ...style
@@ -61,7 +61,7 @@ export function ErrorState({ title = "Unable to load data", message, onRetry, ac
         padding: "2rem",
         textAlign: "center",
         background: "var(--status-danger-bg)",
-        border: "1px solid rgba(239, 68, 68, 0.25)",
+        border: "1px solid var(--border-subtle)",
         borderRadius: "var(--radius-md)",
         color: "var(--text-primary)"
       }}
@@ -71,7 +71,7 @@ export function ErrorState({ title = "Unable to load data", message, onRetry, ac
           width: "44px",
           height: "44px",
           borderRadius: "50%",
-          background: "rgba(239, 68, 68, 0.2)",
+          background: "var(--status-danger-bg)",
           color: "var(--status-danger)",
           display: "inline-flex",
           alignItems: "center",

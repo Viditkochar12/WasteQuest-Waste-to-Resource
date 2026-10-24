@@ -1,10 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { getHealth } from "../../services/api";
+import { ThemeToggle } from "./ThemeToggle";
 
 export function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [scrollProgress, setScrollProgress] = useState(0);
   const [serverHealth, setServerHealth] = useState({ status: "checking", label: "Checking API" });
+
+  const headerRef = useRef(null);
+  const mobileToggleRef = useRef(null);
 
   // Passive rAF scroll progress calculation
   useEffect(() => {
@@ -61,15 +65,33 @@ export function Navbar() {
     };
   }, []);
 
-  // Escape key closes mobile menu
+  // Escape key closes mobile menu and restores focus
   useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape" && mobileMenuOpen) {
         setMobileMenuOpen(false);
+        mobileToggleRef.current?.focus();
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mobileMenuOpen]);
+
+  // Outside click listener closes mobile menu
+  useEffect(() => {
+    if (!mobileMenuOpen) return;
+    const handleOutsideClick = (e) => {
+      if (headerRef.current && !headerRef.current.contains(e.target)) {
+        setMobileMenuOpen(false);
+        mobileToggleRef.current?.focus();
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    document.addEventListener("touchstart", handleOutsideClick);
+    return () => {
+      document.removeEventListener("mousedown", handleOutsideClick);
+      document.removeEventListener("touchstart", handleOutsideClick);
+    };
   }, [mobileMenuOpen]);
 
   const navLinks = [
@@ -81,11 +103,12 @@ export function Navbar() {
 
   return (
     <header
+      ref={headerRef}
       style={{
         position: "sticky",
         top: 0,
         zIndex: 900,
-        backgroundColor: "rgba(14, 17, 36, 0.85)",
+        backgroundColor: "var(--nav-bg)",
         backdropFilter: "blur(14px)",
         WebkitBackdropFilter: "blur(14px)",
         borderBottom: "1px solid var(--border-subtle)"
@@ -189,6 +212,9 @@ export function Navbar() {
             </a>
           ))}
 
+          {/* Theme switch button */}
+          <ThemeToggle id="desktop-theme-toggle" />
+
           {/* Health indicator pill */}
           <div
             title={`Backend Status: ${serverHealth.label}`}
@@ -200,7 +226,7 @@ export function Navbar() {
               fontFamily: "var(--font-mono)",
               padding: "0.25rem 0.65rem",
               borderRadius: "var(--radius-pill)",
-              background: "rgba(255, 255, 255, 0.06)",
+              background: "var(--chip-bg)",
               border: "1px solid var(--border-subtle)",
               color: "var(--mute)"
             }}
@@ -232,6 +258,7 @@ export function Navbar() {
 
         {/* Mobile Hamburger Toggle */}
         <button
+          ref={mobileToggleRef}
           type="button"
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
           aria-expanded={mobileMenuOpen}
@@ -293,10 +320,24 @@ export function Navbar() {
               {link.label}
             </a>
           ))}
+
+          {/* Theme switch row in mobile drawer */}
           <div
             style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
               paddingTop: "0.75rem",
-              borderTop: "1px solid var(--border-subtle)",
+              borderTop: "1px solid var(--border-subtle)"
+            }}
+          >
+            <span style={{ fontSize: "0.9375rem", fontWeight: 600, color: "var(--ink)" }}>Appearance</span>
+            <ThemeToggle id="mobile-theme-toggle" />
+          </div>
+
+          <div
+            style={{
+              paddingTop: "0.5rem",
               fontSize: "0.8125rem",
               color: "var(--mute)"
             }}

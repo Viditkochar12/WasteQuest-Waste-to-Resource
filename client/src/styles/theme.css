@@ -4,7 +4,8 @@
    No pure #000 backgrounds. WCAG AA compliant contrast.
    ========================================================================== */
 
-:root {
+:root,
+:root[data-theme="dark"] {
   color-scheme: dark;
 
   /* Base Midnight Palette */
@@ -16,6 +17,7 @@
   --accent: #3ef0c0;
   --accent-hover: #7dfad8;
   --accent-text: #0e1124;
+  --on-accent: #0e1124;
 
   /* Stream Card Background Colours */
   --card-organic: #0f4a46;      /* deep teal */
@@ -23,6 +25,10 @@
   --card-hazardous: #5a1f3f;    /* wine-magenta */
   --card-scan: #352a78;         /* violet */
   --card-spare: #4a3d12;
+
+  /* Card typography & chips */
+  --card-ink: #ffffff;
+  --card-chip-bg: rgba(255, 255, 255, 0.14);
 
   /* Bright "Lit" Pipeline Node Colours */
   --lit-organic: #7dfad8;
@@ -37,18 +43,40 @@
   --bin-label: #0e1124;
 
   /* Panels, Nodes & Overlays */
+  --surface: #171b3a;
+  --surface-2: #232852;
   --panel-sim: #171b3a;
   --node-circle: #232852;
   --scan-box: #232852;
   --chip-bg: rgba(255, 255, 255, 0.14);
   --panel-inner: rgba(255, 255, 255, 0.07);
+  --border: rgba(255, 255, 255, 0.12);
   --border-subtle: rgba(255, 255, 255, 0.12);
+  --border-medium: rgba(255, 255, 255, 0.20);
   --border-active: rgba(62, 240, 192, 0.4);
+  --nav-bg: rgba(14, 17, 36, 0.85);
+  --overlay: #0e1124;
+  --caption-bg: rgba(23, 27, 58, 0.7);
+
+  /* Glows & Shadows */
+  --glow-1: rgba(62, 240, 192, 0.20);
+  --glow-2: rgba(255, 95, 158, 0.16);
+  --shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
 
   /* Status */
   --status-success: #3ef0c0;
   --status-warning: #f59e0b;
   --status-danger: #ff5f9e;
+  --status-success-bg: rgba(62, 240, 192, 0.14);
+  --status-danger-bg: rgba(255, 95, 158, 0.14);
+
+  /* Aliases */
+  --bg-surface: var(--surface);
+  --text-primary: var(--ink);
+  --text-secondary: var(--mute);
+  --text-muted: var(--mute);
+  --brand-primary: var(--accent);
+  --skeleton-gradient: linear-gradient(90deg, rgba(255,255,255,0.04) 25%, rgba(255,255,255,0.09) 50%, rgba(255,255,255,0.04) 75%);
 
   /* Typography */
   --font-heading: 'Bricolage Grotesque', system-ui, -apple-system, sans-serif;
@@ -64,6 +92,80 @@
   --max-width: 1200px;
 }
 
+:root[data-theme="light"] {
+  color-scheme: light;
+
+  /* Base Light Palette */
+  --bg: #f5f7ff;
+  --ink: #14183a;
+  --mute: #4a5080;
+
+  /* Accent Aqua (WCAG AA compliant emerald aqua) */
+  --accent: #0f9d7a;
+  --accent-hover: #0b7d61;
+  --accent-text: #ffffff;
+  --on-accent: #ffffff;
+
+  /* Stream Card Background Colours (Soft pastels) */
+  --card-organic: #cdf3e6;
+  --card-recyclable: #d4e6ff;
+  --card-hazardous: #ffd6e6;
+  --card-scan: #e3dcff;
+  --card-spare: #fef3c7;
+
+  /* Card typography & chips */
+  --card-ink: #14183a;
+  --card-chip-bg: rgba(20, 24, 58, 0.08);
+
+  /* Bright "Lit" Pipeline Node Colours */
+  --lit-organic: #0f9d7a;
+  --lit-recyclable: #2b72d6;
+  --lit-hazardous: #d6336c;
+  --lit-scan: #6a4cf0;
+
+  /* Hero Bins */
+  --bin-organic: #0f9d7a;
+  --bin-recyclable: #2b72d6;
+  --bin-hazardous: #d6336c;
+  --bin-label: #14183a;
+
+  /* Panels, Nodes & Overlays */
+  --surface: #ffffff;
+  --surface-2: #eef2fc;
+  --panel-sim: #ffffff;
+  --node-circle: #eef2fc;
+  --scan-box: #eef2fc;
+  --chip-bg: rgba(20, 24, 58, 0.08);
+  --panel-inner: rgba(20, 24, 58, 0.06);
+  --border: rgba(20, 24, 58, 0.12);
+  --border-subtle: rgba(20, 24, 58, 0.12);
+  --border-medium: rgba(20, 24, 58, 0.20);
+  --border-active: rgba(15, 157, 122, 0.4);
+  --nav-bg: rgba(245, 247, 255, 0.88);
+  --overlay: #f5f7ff;
+  --caption-bg: rgba(238, 242, 252, 0.85);
+
+  /* Glows & Shadows */
+  --glow-1: rgba(15, 157, 122, 0.08);
+  --glow-2: rgba(214, 51, 108, 0.06);
+  --shadow: 0 12px 32px rgba(20, 24, 58, 0.08);
+
+  /* Status */
+  --status-success: #0f9d7a;
+  --status-warning: #d97706;
+  --status-danger: #d6336c;
+  --status-success-bg: rgba(15, 157, 122, 0.12);
+  --status-danger-bg: rgba(214, 51, 108, 0.1);
+
+  /* Aliases */
+  --bg-surface: var(--surface);
+  --text-primary: var(--ink);
+  --text-secondary: var(--mute);
+  --text-muted: var(--mute);
+  --brand-primary: var(--accent);
+  --skeleton-gradient: linear-gradient(90deg, rgba(20,24,58,0.04) 25%, rgba(20,24,58,0.08) 50%, rgba(20,24,58,0.04) 75%);
+}
+
 /* Base resets & box sizing */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -74,7 +176,7 @@
 html {
   font-size: 16px;
   scroll-behavior: smooth;
-  color-scheme: dark;
+  scroll-padding-top: calc(var(--nav-height) + 16px);
 }
 
 body {
@@ -90,9 +192,14 @@ body {
 
   /* Top of page decorative glows (non-fixed to prevent scroll jank) */
   background-image:
-    radial-gradient(circle at 85% 6%, rgba(62, 240, 192, 0.20) 0%, transparent 450px),
-    radial-gradient(circle at 12% 4%, rgba(255, 95, 158, 0.16) 0%, transparent 450px);
+    radial-gradient(circle at 85% 6%, var(--glow-1) 0%, transparent 450px),
+    radial-gradient(circle at 12% 4%, var(--glow-2) 0%, transparent 450px);
   background-repeat: no-repeat;
+}
+
+/* Smooth color transitions on theme switch */
+body, nav, header, article, section, div.stack-card, div.caption-box {
+  transition: background-color 200ms ease, border-color 200ms ease, color 200ms ease;
 }
 
 /* Accessible Skip Link */
@@ -203,14 +310,14 @@ p {
 }
 
 .btn-secondary {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--chip-bg);
   color: var(--ink);
   border-color: var(--border-subtle);
 }
 
 .btn-secondary:hover:not(:disabled) {
-  background: rgba(255, 255, 255, 0.15);
-  border-color: rgba(255, 255, 255, 0.25);
+  background: var(--panel-inner);
+  border-color: var(--border-medium);
 }
 
 .btn-outline {
@@ -252,7 +359,7 @@ p {
   gap: 0.625rem;
   font-size: 0.875rem;
   color: var(--mute);
-  background: rgba(23, 27, 58, 0.6);
+  background: var(--caption-bg);
   border-left: 3px solid var(--accent);
   padding: 0.625rem 1rem;
   margin-top: 1.25rem;

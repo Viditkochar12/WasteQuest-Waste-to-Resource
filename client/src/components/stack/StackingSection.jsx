@@ -143,19 +143,19 @@ export function StackingSection() {
                 {/* Card Top Info */}
                 <div>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: "0.85rem" }}>
-                    <span className="chip" style={{ background: "rgba(255, 255, 255, 0.14)" }}>
+                    <span className="chip" style={{ background: "var(--card-chip-bg)", color: "var(--card-ink)" }}>
                       {card.tag}
                     </span>
-                    <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.8125rem", color: "var(--ink)", opacity: 0.8 }}>
+                    <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.8125rem", color: "var(--card-ink)", opacity: 0.8 }}>
                       0{index + 1} / 04
                     </span>
                   </div>
 
-                  <h3 style={{ fontSize: "clamp(1.5rem, 2.8vw, 2.2rem)", marginBottom: "0.75rem", color: "#ffffff" }}>
+                  <h3 style={{ fontSize: "clamp(1.5rem, 2.8vw, 2.2rem)", marginBottom: "0.75rem", color: "var(--card-ink)" }}>
                     {card.heading}
                   </h3>
 
-                  <p style={{ color: "#ffffff", opacity: 0.9, fontSize: "1rem", lineHeight: 1.5, margin: 0 }}>
+                  <p style={{ color: "var(--card-ink)", opacity: 0.9, fontSize: "1rem", lineHeight: 1.5, margin: 0 }}>
                     {card.description}
                   </p>
 
@@ -170,7 +170,7 @@ export function StackingSection() {
                       flexDirection: "column",
                       gap: "0.4rem",
                       fontSize: "0.875rem",
-                      color: "#ffffff",
+                      color: "var(--card-ink)",
                       opacity: 0.85
                     }}
                   >
