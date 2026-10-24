@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from "react";
-import { classifyImage, createReport } from "../../services/api";
+import { classifyImage, createReport, uploadReportImage } from "../../services/api";
 import { ResultCard } from "./ResultCard";
 
 const MAX_FILE_SIZE_BYTES = 5 * 1024 * 1024; // 5 MB
@@ -25,6 +25,8 @@ export function ScanWorkspace() {
   const abortControllerRef = useRef(null);
   const dropZoneRef = useRef(null);
   const resultRef = useRef(null);
+  const saveInProgressRef = useRef(false);
+  const uploadedImageRef = useRef(null);
 
   // Safely revoke object URLs to prevent memory leaks
   const cleanUpPreview = () => {
@@ -57,6 +59,7 @@ export function ScanWorkspace() {
 
     cleanUpPreview();
     setResult(null);
+    uploadedImageRef.current = null;
     setSaveStatus("idle");
     setSaveError("");
     setErrorMessage("");
@@ -235,55 +238,88 @@ export function ScanWorkspace() {
 
   // Save report to backend POST /api/reports
   const handleSaveReport = async () => {
-    if (!result || isSaving || saveStatus === "saved") return;
-
-    setIsSaving(true);
-    setSaveError("");
-
-    // Obtain coordinates via HTML5 Geolocation API
-    let coords = { latitude: 0, longitude: 0 };
-    if (typeof navigator !== "undefined" && navigator.geolocation) {
-      try {
-        const position = await new Promise((resolve, reject) => {
-          navigator.geolocation.getCurrentPosition(resolve, reject, {
-            timeout: 5000,
-            maximumAge: 60000
-          });
-        });
-        coords = {
-          latitude: Number(position.coords.latitude.toFixed(6)),
-          longitude: Number(position.coords.longitude.toFixed(6))
-        };
-      } catch {
-        // Geolocation denied or timed out; use default valid coordinates [0, 0]
-        console.warn("Geolocation denied or unavailable. Using default coordinates.");
-      }
+    if (saveInProgressRef.current || isSaving || saveStatus === "saved") return;
+    if (!result) {
+      setSaveStatus("error");
+      setSaveError("Classify an image before saving a report.");
+      return;
+    }
+    if (!selectedFile) {
+      setSaveStatus("error");
+      setSaveError("Select an image before saving a report.");
+      return;
     }
 
-    // Prepare payload adhering to server/src/models/Report.js schema
-    const payload = {
-      category: result.category,
-      confidence: typeof result.confidence === "number" ? result.confidence : undefined,
-      disposalAdvice: result.disposalAdvice || "Recycle according to local guidelines.",
-      recyclable: Boolean(result.recyclable),
-      image: {
-        url: result.image?.url || `https://wastequest.local/uploads/${selectedFile?.name || "scan.jpg"}`,
-        publicId: result.image?.publicId || `wq_${Date.now()}`
-      },
-      location: coords
-    };
+    saveInProgressRef.current = true;
+    setIsSaving(true);
+    setSaveStatus("saving");
+    setSaveError("");
 
-    const res = await createReport(payload);
-    setIsSaving(false);
+    try {
+      // Obtain coordinates via HTML5 Geolocation API, with a valid neutral fallback.
+      let coords = { latitude: 0, longitude: 0 };
+      if (typeof navigator !== "undefined" && navigator.geolocation) {
+        try {
+          const position = await new Promise((resolve, reject) => {
+            navigator.geolocation.getCurrentPosition(resolve, reject, {
+              timeout: 5000,
+              maximumAge: 60000
+            });
+          });
+          coords = {
+            latitude: Number(position.coords.latitude.toFixed(6)),
+            longitude: Number(position.coords.longitude.toFixed(6))
+          };
+        } catch {
+          // Geolocation denied or timed out; keep default coordinates [0, 0].
+        }
+      }
 
-    if (res.ok) {
+      // Reuse a successful upload if report creation needs to be retried.
+      if (!uploadedImageRef.current) {
+        const upload = await uploadReportImage(selectedFile);
+        if (!upload.ok) {
+          throw new Error(upload.error?.message || "Could not upload the selected image.");
+        }
+        if (
+          typeof upload.data?.url !== "string" ||
+          !upload.data.url.trim() ||
+          typeof upload.data?.publicId !== "string" ||
+          !upload.data.publicId.trim()
+        ) {
+          throw new Error("Image upload returned an invalid response. Please try again.");
+        }
+        uploadedImageRef.current = {
+          url: upload.data.url.trim(),
+          publicId: upload.data.publicId.trim()
+        };
+      }
+
+      // Prepare payload adhering to server/src/models/Report.js schema.
+      const payload = {
+        category: result.category,
+        confidence: typeof result.confidence === "number" ? result.confidence : undefined,
+        disposalAdvice: result.disposalAdvice || "Recycle according to local guidelines.",
+        recyclable: Boolean(result.recyclable),
+        image: uploadedImageRef.current,
+        location: coords
+      };
+
+      const response = await createReport(payload);
+      if (!response.ok) {
+        throw new Error(response.error?.message || "Could not save the report.");
+      }
+      if (typeof response.data?._id !== "string" || !response.data._id.trim()) {
+        throw new Error("The server response did not include a saved report ID.");
+      }
+
       setSaveStatus("saved");
-    } else {
+    } catch (error) {
       setSaveStatus("error");
-      setSaveError(
-        res.error?.message ||
-          "Could not save report to backend. (Note: Check if MongoDB is connected in server)."
-      );
+      setSaveError(error?.message || "Could not save the report. Please try again.");
+    } finally {
+      saveInProgressRef.current = false;
+      setIsSaving(false);
     }
   };
 
@@ -628,7 +664,7 @@ export function ScanWorkspace() {
                   </p>
                   {errorCode === "ROUTE_NOT_FOUND" && (
                     <div style={{ marginTop: "0.75rem", fontSize: "0.8125rem", color: "#fecaca" }}>
-                      <em>Note: The backend has not mounted <code>POST /api/classify</code> yet. Toggle <code>VITE_USE_MOCK=true</code> in <code>client/.env</code> if you want to preview UI classification results while waiting for backend deployment.</em>
+                      <em>The classification route could not be found. Confirm the backend is running the current WasteQuest server. For a local UI demo, set <code>VITE_USE_MOCK=true</code> in <code>client/.env</code>.</em>
                     </div>
                   )}
                   {selectedFile && (

@@ -8,7 +8,7 @@
 ## 🌟 Overview
 The `ai/` module provides computer vision classification and intelligent segregation guidance for waste-to-resource recovery. It inspects images of discarded objects, categorizes them into standard waste streams, routes them to proper color-coded bins, details downstream recovery pipelines, and calculates estimated environmental impact (CO2 & water savings).
 
-The backend Express server exposes this capability via the `POST /api/classify` REST endpoint.
+The backend Express server exposes this capability via `POST /api/classify`. Reports store image URLs returned by the separate Cloudinary-backed `POST /api/uploads` endpoint.
 
 ---
 
@@ -106,6 +106,7 @@ All error responses adhere to a consistent error structure:
    npm install
    ```
 3. Configure `server/.env` (see Environment Variables section below).
+   For report image storage, create a Cloudinary account and add `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` to `server/.env` using `server/.env.example` as a placeholder template. Keep the API secret server-side. Uploads return a Cloudinary URL and public ID used by report creation.
 4. Start the development server:
    ```bash
    npm run dev
@@ -126,6 +127,9 @@ All error responses adhere to a consistent error structure:
 | `PORT` | Backend server port | `5000` |
 | `CLIENT_ORIGIN` | Allowed CORS origin for frontend client | `http://localhost:5173` |
 | `MONGODB_URI` | MongoDB connection string | `mongodb://localhost:27017/wastequest` |
+| `CLOUDINARY_CLOUD_NAME` | Cloudinary cloud name for report image storage | Unset |
+| `CLOUDINARY_API_KEY` | Cloudinary API key (server-side only) | Unset |
+| `CLOUDINARY_API_SECRET` | Cloudinary API secret (server-side only) | Unset |
 | `WASTEQUEST_AI_PROVIDER` | Explicit AI provider selection: `gemini`, `anthropic`, or `mock` | Defaults to real configured provider |
 | `AI_PROVIDER` | Fallback provider selection if `WASTEQUEST_AI_PROVIDER` is unset | Unset |
 | `GEMINI_API_KEY` | Google Gemini API key | Unset |
@@ -161,11 +165,11 @@ All error responses adhere to a consistent error structure:
 cd server
 npm test
 ```
-Runs 27 automated tests covering health checks, reports API, `/api/classify` multipart uploads, error cases, 5 MB limits, mock classifications, genuine Gemini integration, unknown categories, and provider failure handling.
+Runs 39 automated tests covering health checks, reports and leaderboard APIs, `/api/classify` and Cloudinary upload multipart requests, file validation, sanitized provider errors, mock classifications, Gemini provider behavior, and unknown categories. External provider and Cloudinary responses are mocked; these tests do not require credentials.
 
 ### AI Module Unit Tests (Node native runner)
 ```bash
 cd ai
 npm test
 ```
-Runs 30 unit tests covering category normalization, confidence boundaries, Gemini provider forwarding, error containment, magic bytes, size limits, and security containment.
+Runs 30 unit tests covering category normalization, confidence boundaries, provider selection, Gemini response parsing and error handling, error containment, magic bytes, size limits, and security containment. Provider tests mock network responses and do not require API credentials.
