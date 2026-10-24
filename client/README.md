@@ -99,6 +99,7 @@ npm run dev
 ```bash
 npm run lint
 npm run build
+npm test
 ```
 
 ---
@@ -107,20 +108,23 @@ npm run build
 
 1. **`POST /api/classify`** (AI Vision Classification):
    - Accepts `multipart/form-data` with field `image` (max 5 MB, JPEG/PNG/WebP).
-   - Surfaces real backend errors (e.g. 404 `ROUTE_NOT_FOUND` if unmounted).
+   - Mounted in the Express server and delegates classification to the configured AI provider.
 2. **`GET /api/reports`** (Paginated Reports):
    - Accepts `?page=1&limit=10&category=...&status=...`.
-   - Returns `{ success: true, data: Report[], pagination: { ... } }`.
-3. **`POST /api/reports`** (Create Report):
-   - JSON payload with `category`, `confidence`, `disposalAdvice`, `recyclable`, `image: { url, publicId }`, and `location: { latitude, longitude }`.
-4. **`GET /api/leaderboard`** (Leaderboard):
+   - Returns `{ success: true, data: Report[], pagination: { ... } }`; report image URLs are shown as previews in the recent report log.
+3. **`POST /api/uploads`** (Cloudinary Image Storage):
+   - Accepts `multipart/form-data` with field `image` and returns `{ success: true, data: { url, publicId } }`.
+   - Configure `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` in `server/.env` for real uploads.
+4. **`POST /api/reports`** (Create Report):
+   - JSON payload with `category`, `confidence`, `disposalAdvice`, `recyclable`, the upload response `image: { url, publicId }`, and `location: { latitude, longitude }`.
+5. **`GET /api/leaderboard`** (Leaderboard):
    - Returns ranked users. If 404, the UI renders an honest "Leaderboard not available yet" state.
-5. **`GET /api/health`** (Server & DB Health):
+6. **`GET /api/health`** (Server & DB Health):
    - Live backend status reflected in the sticky navigation pill.
 
 ---
 
 ## ⚠️ Known Limitations & Open Questions
 - See [`docs/FRONTEND_API_CONTRACT.md`](../docs/FRONTEND_API_CONTRACT.md) and [`docs/OPEN_QUESTIONS.md`](../docs/OPEN_QUESTIONS.md).
-- `POST /api/classify` is implemented in `ai/` but needs mounting in `server/src/app.js`.
-- Report image upload (Cloudinary/S3 integration) is pending confirmation from backend.
+- Real AI classification requires a configured provider API key in `server/.env`.
+- Real report image uploads require Cloudinary credentials in `server/.env`; mock mode intentionally does not fabricate uploaded image URLs or IDs.

@@ -1,6 +1,75 @@
 import { useState, useEffect } from "react";
 import { getReports } from "../../services/api";
+import { getReportImageUrl } from "../../services/reportImages";
 import { Skeleton, ErrorState, EmptyState } from "../common/FeedbackStates";
+
+function ReportImagePreview({ imageUrl, category, recyclable }) {
+  const [loadedUrl, setLoadedUrl] = useState(null);
+  const [failedUrl, setFailedUrl] = useState(null);
+
+  if (imageUrl && failedUrl !== imageUrl) {
+    return (
+      <div
+        style={{
+          width: "48px",
+          height: "48px",
+          flex: "0 0 48px",
+          borderRadius: "10px",
+          background: recyclable ? "rgba(62, 240, 192, 0.15)" : "rgba(255, 95, 158, 0.15)",
+          color: recyclable ? "var(--accent)" : "var(--status-danger)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: "1.2rem",
+          position: "relative",
+          overflow: "hidden"
+        }}
+      >
+        <span aria-hidden="true">{recyclable ? "♻️" : "🗑️"}</span>
+        <img
+          src={imageUrl}
+          alt={`${category || "Waste"} report`}
+          width="48"
+          height="48"
+          loading="lazy"
+          decoding="async"
+          referrerPolicy="no-referrer"
+          onLoad={() => setLoadedUrl(imageUrl)}
+          onError={() => setFailedUrl(imageUrl)}
+          style={{
+            width: "48px",
+            height: "48px",
+            position: "absolute",
+            inset: 0,
+            objectFit: "cover",
+            opacity: loadedUrl === imageUrl ? 1 : 0,
+            background: "var(--bg)"
+          }}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        width: "48px",
+        height: "48px",
+        flex: "0 0 48px",
+        borderRadius: "10px",
+        background: recyclable ? "rgba(62, 240, 192, 0.15)" : "rgba(255, 95, 158, 0.15)",
+        color: recyclable ? "var(--accent)" : "var(--status-danger)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "1.2rem"
+      }}
+    >
+      {recyclable ? "♻️" : "🗑️"}
+    </div>
+  );
+}
 
 export default function DashboardSection() {
   const [reports, setReports] = useState(null);
@@ -215,6 +284,7 @@ export default function DashboardSection() {
           {!loading && !error && reports && reports.length > 0 && (
             <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
               {reports.map((rep, idx) => {
+                const imageUrl = getReportImageUrl(rep.image?.url);
                 const dateStr = rep.createdAt
                   ? new Date(rep.createdAt).toLocaleDateString(undefined, {
                       month: "short",
@@ -242,21 +312,11 @@ export default function DashboardSection() {
                     }}
                   >
                     <div style={{ display: "flex", alignItems: "center", gap: "0.875rem" }}>
-                      <div
-                        style={{
-                          width: "38px",
-                          height: "38px",
-                          borderRadius: "10px",
-                          background: rep.recyclable ? "rgba(62, 240, 192, 0.15)" : "rgba(255, 95, 158, 0.15)",
-                          color: rep.recyclable ? "var(--accent)" : "var(--status-danger)",
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                          fontSize: "1.2rem"
-                        }}
-                      >
-                        {rep.recyclable ? "♻️" : "🗑️"}
-                      </div>
+                      <ReportImagePreview
+                        imageUrl={imageUrl}
+                        category={rep.category}
+                        recyclable={rep.recyclable}
+                      />
                       <div>
                         <strong style={{ display: "block", textTransform: "capitalize", color: "var(--ink)", fontSize: "1rem" }}>
                           {rep.category || "Uncategorized item"}
