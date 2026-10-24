@@ -5,7 +5,8 @@
   "main": "src/classifyWaste.js",
   "scripts": {
     "test": "node --test tests/classifyWaste.test.js",
-    "demo": "node examples/demo.js"
+    "demo": "node examples/demo.js",
+    "benchmark": "node examples/benchmark.js"
   },
   "keywords": [
     "waste",
