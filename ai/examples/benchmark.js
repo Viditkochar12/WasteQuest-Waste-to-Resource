@@ -1,6 +1,10 @@
 /**
- * WasteQuest AI Benchmarking & Evaluation Runner
- * Executes a simulated batch across canonical streams and reports latency & accuracy.
+ * WasteQuest AI Pipeline Verification & Mock Benchmark
+ *
+ * NOTE: This is an internal pipeline integration and speed benchmark utilizing
+ * simulated mock inputs (MockProvider with preset categories) to verify the
+ * complete end-to-end normalization, bin assignment, downstream route generation,
+ * and LCA environmental impact math without invoking live external vision APIs.
  */
 
 const { classifyWaste } = require("../src/classifyWaste");
@@ -9,8 +13,10 @@ const { MINIMAL_PNG, MINIMAL_JPEG } = require("../tests/mockImages");
 
 async function runBenchmark() {
   console.log("===============================================================");
-  console.log("       WasteQuest AI: Track ST-01 Benchmark Runner             ");
-  console.log("===============================================================\n");
+  console.log("    WasteQuest AI: Pipeline Verification & Mock Benchmark      ");
+  console.log("===============================================================");
+  console.log(" [!] Test Type: Pipeline Integration Test (Mock Mode)");
+  console.log(" [!] Evaluates: In-memory classification, alias mapping & LCA\n");
 
   const testCases = [
     { name: "Plastic PET Bottle", category: "plastic", buffer: MINIMAL_PNG, mimeType: "image/png" },
@@ -53,11 +59,12 @@ async function runBenchmark() {
   const accuracy = ((correctClassifications / testCases.length) * 100).toFixed(1);
 
   console.log("\n---------------------------------------------------------------");
+  console.log(` Mode:                   Mock / Pipeline Simulation`);
   console.log(` Total Evaluated Items:  ${testCases.length}`);
-  console.log(` Accuracy Score:         ${accuracy}%`);
-  console.log(` Average Inference Time: ${avgLatency} ms`);
+  console.log(` Pipeline Success Rate:  ${accuracy}%`);
+  console.log(` Average Execution Time: ${avgLatency} ms`);
   console.log("---------------------------------------------------------------\n");
-  console.log("✅ Benchmark verification passed with zero errors!");
+  console.log("✅ Pipeline mock benchmark completed successfully with zero errors!");
 }
 
 runBenchmark().catch(console.error);
