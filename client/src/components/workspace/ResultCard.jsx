@@ -29,7 +29,8 @@ export function ResultCard({ result, onSaveReport, isSaving, saveStatus, saveErr
     glass: { border: "var(--lit-recyclable)", label: "Recyclable (glass)", icon: "🍾" },
     e_waste: { border: "var(--lit-hazardous)", label: "Hazardous / E-Waste", icon: "🔋" },
     hazardous: { border: "var(--lit-hazardous)", label: "Hazardous waste", icon: "⚠️" },
-    general: { border: "var(--border-subtle)", label: "Residual municipal waste", icon: "🗑️" }
+    general: { border: "var(--border-subtle)", label: "Residual municipal waste", icon: "🗑️" },
+    unknown: { border: "var(--border-subtle)", label: "Unclassified material", icon: "❓" }
   };
 
   const styleMeta = streamMeta[category.toLowerCase()] || streamMeta.general;
@@ -48,7 +49,7 @@ export function ResultCard({ result, onSaveReport, isSaving, saveStatus, saveErr
       }}
     >
       {/* Dev Mock Warning indicator */}
-      {_isMock && (
+      {(_isMock || itemDescription?.includes("(mock mode)")) && (
         <div
           style={{
             position: "absolute",

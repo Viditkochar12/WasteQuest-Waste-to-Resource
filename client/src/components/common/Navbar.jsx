@@ -39,10 +39,41 @@ export function Navbar() {
 
       if (res.ok) {
         const isDbConnected = res.data?.database === "connected";
-        setServerHealth({
-          status: isDbConnected ? "online" : "warning",
-          label: isDbConnected ? "API & DB Online" : "API Live (DB offline)"
-        });
+        const isMock = res.data?.isMock || res.data?.aiProvider === "mock";
+        const aiProvider = res.data?.aiProvider;
+        const aiReady = res.data?.aiReady;
+
+        if (!isDbConnected) {
+          setServerHealth({
+            status: "warning",
+            label: "DB Disconnected"
+          });
+        } else if (isMock) {
+          setServerHealth({
+            status: "mock",
+            label: "API Live (Mock AI)"
+          });
+        } else if (aiReady && aiProvider === "gemini") {
+          setServerHealth({
+            status: "online",
+            label: "Gemini Vision Live"
+          });
+        } else if (aiReady && aiProvider === "anthropic") {
+          setServerHealth({
+            status: "online",
+            label: "Claude Vision Live"
+          });
+        } else if (!aiReady) {
+          setServerHealth({
+            status: "warning",
+            label: "AI Unconfigured"
+          });
+        } else {
+          setServerHealth({
+            status: "online",
+            label: "API Live"
+          });
+        }
       } else {
         setServerHealth({
           status: "offline",
@@ -213,20 +244,20 @@ export function Navbar() {
                 backgroundColor:
                   serverHealth.status === "online"
                     ? "var(--accent)"
+                    : serverHealth.status === "mock"
+                    ? "#fbbf24"
                     : serverHealth.status === "warning"
                     ? "var(--status-warning)"
                     : "var(--status-danger)",
                 boxShadow:
-                  serverHealth.status === "online" ? "0 0 8px var(--accent)" : "none"
+                  serverHealth.status === "online"
+                    ? "0 0 8px var(--accent)"
+                    : serverHealth.status === "mock"
+                    ? "0 0 8px rgba(251, 191, 36, 0.6)"
+                    : "none"
               }}
             />
-            <span>
-              {serverHealth.status === "online"
-                ? "API Live"
-                : serverHealth.status === "warning"
-                ? "DB Disconnected"
-                : "API Offline"}
-            </span>
+            <span>{serverHealth.label}</span>
           </div>
         </nav>
 

@@ -263,7 +263,7 @@ export function ScanWorkspace() {
     // Prepare payload adhering to server/src/models/Report.js schema
     const payload = {
       category: result.category,
-      confidence: typeof result.confidence === "number" ? result.confidence : 0.8,
+      confidence: typeof result.confidence === "number" ? result.confidence : undefined,
       disposalAdvice: result.disposalAdvice || "Recycle according to local guidelines.",
       recyclable: Boolean(result.recyclable),
       image: {

@@ -1,11 +1,15 @@
+const { ErrorCodes, AIClassificationError } = require("../errors");
+
 /**
  * Anthropic Claude Vision Provider using native Node fetch
  */
-
 class AnthropicProvider {
   constructor(apiKey, model = "claude-3-5-sonnet-20241022") {
     if (!apiKey || typeof apiKey !== "string" || !apiKey.trim()) {
-      throw new Error("ANTHROPIC_API_KEY is required for AnthropicProvider");
+      throw new AIClassificationError(
+        ErrorCodes.PROVIDER_UNAVAILABLE,
+        "ANTHROPIC_API_KEY is required for AnthropicProvider."
+      );
     }
     this.apiKey = apiKey.trim();
     this.model = model || "claude-3-5-sonnet-20241022";
@@ -26,13 +30,14 @@ Analyze the provided image and classify the primary discarded/waste item into on
 - organic
 - e_waste
 - general
+- unknown (use this if the waste material cannot be reliably identified or is uncertain)
 
 Respond ONLY with a valid raw JSON object (no markdown, no backticks, no code block) matching this schema:
 {
-  "category": "plastic" | "paper" | "glass" | "metal" | "organic" | "e_waste" | "general",
-  "confidence": <float between 0.0 and 1.0>,
-  "isWaste": <boolean: false if the image does not show waste/recyclable items, e.g. human face, pet, nature landscape>,
-  "itemDescription": "<concise description of the item, e.g. 'aluminum soda can'>"
+  "category": "plastic" | "paper" | "glass" | "metal" | "organic" | "e_waste" | "general" | "unknown",
+  "isWaste": <boolean: false if the image does not show waste/recyclable items, e.g. human face, pet, living animal, natural landscape>,
+  "itemDescription": "<concise description of the specific item detected, e.g. 'aluminum soda can' or 'apple core'>",
+  "disposalAdvice": "<brief disposal advice specific to this item and material>"
 }
 `;
 
@@ -60,25 +65,67 @@ Respond ONLY with a valid raw JSON object (no markdown, no backticks, no code bl
       ]
     };
 
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "x-api-key": this.apiKey,
-        "anthropic-version": "2023-06-01",
-        "content-type": "application/json"
-      },
-      body: JSON.stringify(requestBody)
-    });
-
-    if (!response.ok) {
-      throw new Error(`Anthropic Vision API request failed with status ${response.status}`);
+    let response;
+    try {
+      response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "x-api-key": this.apiKey,
+          "anthropic-version": "2023-06-01",
+          "content-type": "application/json"
+        },
+        body: JSON.stringify(requestBody),
+        signal: AbortSignal.timeout(20000)
+      });
+    } catch (err) {
+      if (err.name === "TimeoutError" || err.name === "AbortError") {
+        throw new AIClassificationError(
+          ErrorCodes.INFERENCE_FAILED,
+          "Anthropic Vision API request timed out."
+        );
+      }
+      throw new AIClassificationError(
+        ErrorCodes.INFERENCE_FAILED,
+        "Network connection to Anthropic Vision API failed."
+      );
     }
 
-    const json = await response.json();
+    if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        throw new AIClassificationError(
+          ErrorCodes.PROVIDER_UNAVAILABLE,
+          "Anthropic Vision API key is invalid or unauthorized."
+        );
+      }
+      if (response.status === 429) {
+        throw new AIClassificationError(
+          ErrorCodes.PROVIDER_UNAVAILABLE,
+          "Anthropic Vision API rate limit exceeded. Please try again shortly."
+        );
+      }
+      throw new AIClassificationError(
+        ErrorCodes.INFERENCE_FAILED,
+        `Anthropic Vision API request failed with status ${response.status}.`
+      );
+    }
+
+    let json;
+    try {
+      json = await response.json();
+    } catch {
+      throw new AIClassificationError(
+        ErrorCodes.INFERENCE_FAILED,
+        "Malformed JSON response received from Anthropic Vision API."
+      );
+    }
+
     const rawContent = json.content?.[0]?.text;
 
     if (!rawContent) {
-      throw new Error("Empty response received from Anthropic Vision model");
+      throw new AIClassificationError(
+        ErrorCodes.INFERENCE_FAILED,
+        "Empty response received from Anthropic Vision model."
+      );
     }
 
     let parsed;
@@ -86,18 +133,29 @@ Respond ONLY with a valid raw JSON object (no markdown, no backticks, no code bl
       parsed = JSON.parse(rawContent.trim());
     } catch {
       const cleanJson = rawContent.replace(/```(?:json)?/g, "").replace(/```/g, "").trim();
-      parsed = JSON.parse(cleanJson);
+      try {
+        parsed = JSON.parse(cleanJson);
+      } catch {
+        throw new AIClassificationError(
+          ErrorCodes.INFERENCE_FAILED,
+          "Failed to parse classification output from Anthropic Vision model."
+        );
+      }
     }
 
     if (!parsed || typeof parsed !== "object") {
-      throw new Error("Invalid response format received from Anthropic Vision model");
+      throw new AIClassificationError(
+        ErrorCodes.INFERENCE_FAILED,
+        "Invalid response format received from Anthropic Vision model."
+      );
     }
 
     return {
       category: parsed.category,
-      confidence: parsed.confidence,
+      confidence: null, // LLMs do not produce calibrated classification probabilities; honest null
       isWaste: parsed.isWaste !== undefined ? Boolean(parsed.isWaste) : true,
-      itemDescription: parsed.itemDescription || "Identified waste item"
+      itemDescription: parsed.itemDescription || "Identified waste item",
+      disposalAdvice: parsed.disposalAdvice || null
     };
   }
 }

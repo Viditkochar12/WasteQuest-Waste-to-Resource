@@ -177,7 +177,7 @@ router.post("/", async (req, res, next) => {
   }
 
   try {
-    const report = await Report.create({
+    const reportData = {
       category: category.trim(),
       confidence,
       image: {
@@ -190,7 +190,16 @@ router.post("/", async (req, res, next) => {
       },
       disposalAdvice: disposalAdvice.trim(),
       recyclable
-    });
+    };
+
+    if (typeof req.body?.userName === "string" && req.body.userName.trim()) {
+      reportData.userName = req.body.userName.trim().slice(0, 50);
+    }
+    if (typeof req.body?.userId === "string" && req.body.userId.trim()) {
+      reportData.userId = req.body.userId.trim().slice(0, 50);
+    }
+
+    const report = await Report.create(reportData);
 
     return res.status(201).json({
       success: true,

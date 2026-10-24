@@ -16,7 +16,8 @@ const CANONICAL_CATEGORIES = {
   metal: "metal",
   organic: "organic",
   e_waste: "e_waste",
-  general: "general"
+  general: "general",
+  unknown: "unknown"
 };
 
 // Explicit category aliases normalized to canonical labels
@@ -33,7 +34,11 @@ const CATEGORY_ALIASES = {
   "compost": "organic",
   "residual": "general",
   "trash": "general",
-  "landfill": "general"
+  "landfill": "general",
+  "unclassified": "unknown",
+  "uncertain": "unknown",
+  "unrecognized": "unknown",
+  "other": "unknown"
 };
 
 /**
@@ -157,6 +162,23 @@ const WASTE_GUIDELINES = {
       waterSavedLiters: 0.0,
       landfillDivertedGrams: 0,
       assumptions: "Item destined for municipal residual processing or sanitary landfill."
+    }
+  },
+
+  [CANONICAL_CATEGORIES.unknown]: {
+    recyclable: false,
+    bin: {
+      name: "Special / Sorting Inspection",
+      color: "#6B7280",
+      symbol: "❓"
+    },
+    downstreamRoute: "Manual sorting station at local Material Recovery Facility (MRF) for physical inspection.",
+    disposalAdvice: "Material stream is uncertain. Check local municipal guidelines or separate for manual inspection.",
+    environmentalImpact: {
+      co2SavedKg: 0.0,
+      waterSavedLiters: 0.0,
+      landfillDivertedGrams: 0,
+      assumptions: "Environmental metrics cannot be accurately determined for unclassified materials."
     }
   }
 };

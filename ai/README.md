@@ -1,88 +1,34 @@
-# WasteQuest AI Classification Module
+# WasteQuest AI Classification Module & Backend API Integration
 
 > **Track 06 — Sustainability & Climate Tech (ST-01 | Waste to Resource)**  
-> Developed for the WasteQuest Team (Virendra · AI Lead)
+> Developed for the WasteQuest Team (Virendra · AI Lead | Vidit · Backend Integration)
 
 ---
 
 ## 🌟 Overview
-The `ai/` module provides computer vision classification and intelligent segregation guidance for waste-to-resource recovery. It inspects images of discarded objects, categorizes them into standard waste streams, scores confidence, routes them to the proper color-coded bins, details downstream recovery pipelines, and calculates estimated environmental impact (CO2 & water savings).
+The `ai/` module provides computer vision classification and intelligent segregation guidance for waste-to-resource recovery. It inspects images of discarded objects, categorizes them into standard waste streams, routes them to proper color-coded bins, details downstream recovery pipelines, and calculates estimated environmental impact (CO2 & water savings).
+
+The backend Express server exposes this capability via the `POST /api/classify` REST endpoint.
 
 ---
 
-## 🚀 Quick Start for Backend (Vidit)
+## 📡 API Specification: `POST /api/classify`
 
-### 1. Installation & Dependency
-The module runs on **Node.js 20+** using native `fetch` and standard Node APIs. No external npm packages are required to run or test the AI module.
+### Request Requirements
+- **HTTP Method**: `POST`
+- **URL**: `http://localhost:5000/api/classify` (or `/api/classify` relative to backend origin)
+- **Content-Type**: `multipart/form-data`
+- **Multipart Field Name**: `image` (the image file must be sent under the key `image`)
+- **Supported Formats**: `image/jpeg`, `image/jpg`, `image/png`, `image/webp` (header magic byte verification enforced)
+- **Maximum Upload Size**: `5 MB` (enforced at both the multipart upload layer and validation layer)
 
-### 2. Express Route Integration Example
-Add this directly to your Express server (e.g. `server/src/routes/classification.routes.js`):
-
-```javascript
-const express = require("express");
-const multer = require("multer");
-const path = require("path");
-// Adjust relative path depending on your route file depth:
-const { classifyWaste } = require("../../../ai/src/classifyWaste");
-
-const router = express.Router();
-
-// Configure Multer for in-memory buffer storage (max 5MB)
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024 } // 5MB limit
-});
-
-router.post("/classify", upload.single("image"), async (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({
-        success: false,
-        error: { code: "MISSING_FILE", message: "No image file provided in field 'image'" }
-      });
-    }
-
-    const result = await classifyWaste({
-      buffer: req.file.buffer,
-      mimeType: req.file.mimetype
-    });
-
-    if (!result.success) {
-      const statusCode = result.error.code === "LOW_CONFIDENCE" ? 422 : 400;
-      return res.status(statusCode).json(result);
-    }
-
-    return res.status(200).json(result);
-  } catch (err) {
-    return res.status(500).json({
-      success: false,
-      error: { code: "SERVER_ERROR", message: err.message }
-    });
-  }
-});
-
-module.exports = router;
-```
-
----
-
-## 📦 API Contract
-
-### Input Format
-```typescript
-interface ClassificationInput {
-  buffer: Buffer; // Raw image byte buffer
-  mimeType: "image/jpeg" | "image/png" | "image/webp";
-}
-```
-
-### Output Response (`success: true`)
+### Representative Success Response (`HTTP 200 OK`)
 ```json
 {
   "success": true,
   "data": {
     "category": "plastic",
-    "confidence": 0.94,
+    "confidence": null,
     "itemDescription": "Crushed PET water bottle",
     "recyclable": true,
     "bin": {
@@ -102,25 +48,33 @@ interface ClassificationInput {
 }
 ```
 
-### Error Response (`success: false`)
+> [!NOTE]
+> **Honest Confidence Scores**: Generative LLM vision models (such as Gemini and Claude) generate descriptive content rather than calibrated statistical classifier probabilities. In accordance with honest AI practices, genuine vision providers return `confidence: null` (displayed as *"Confidence unavailable"* in the UI) rather than fabricating pseudo-random certainty percentages.
+
+### Error Responses & HTTP Status Codes
+All error responses adhere to a consistent error structure:
 ```json
 {
   "success": false,
   "error": {
-    "code": "LOW_CONFIDENCE",
-    "message": "Classification confidence (42.0%) is below the required threshold of 50.0%. Please take a clearer, closer photo."
+    "code": "ERROR_CODE",
+    "message": "Human-readable explanation."
   }
 }
 ```
 
-#### Error Codes:
-- `MISSING_INPUT`: Missing buffer or MIME type.
-- `INVALID_FILE_TYPE`: Unsupported image format (allowed: JPEG, PNG, WEBP).
-- `FILE_TOO_LARGE`: Buffer exceeds size threshold (default 5MB).
-- `INVALID_IMAGE`: Corrupt or truncated image header.
-- `NOT_WASTE`: Image is not recognized as a waste or recyclable object (e.g., human faces, pets).
-- `LOW_CONFIDENCE`: Model confidence fell below threshold.
-- `INFERENCE_FAILED`: Vision API service error or connection drop.
+| HTTP Status | Error Code | Description / Trigger Condition |
+|---|---|---|
+| **400 Bad Request** | `INVALID_IMAGE` | No file attached in `image` field, empty buffer, or file header magic bytes do not match a valid JPEG, PNG, or WEBP image. |
+| **400 Bad Request** | `INVALID_UPLOAD` | Upload processing failed or malformed multipart structure. |
+| **413 Payload Too Large** | `FILE_TOO_LARGE` | Image size exceeds the 5 MB limit. |
+| **415 Unsupported Media Type** | `INVALID_FILE_TYPE` | Uploaded file MIME type is unsupported (only JPEG, PNG, WEBP are accepted). |
+| **422 Unprocessable Entity** | `NOT_WASTE` | Image successfully validated but does not depict recognizable waste or recyclable material. |
+| **422 Unprocessable Entity** | `LOW_CONFIDENCE` | Calibrated model classification confidence fell below the required threshold (when a calibrated score is present). |
+| **422 Unprocessable Entity** | `UNKNOWN_CATEGORY` | Vision model returned an unsupported or unrecognized waste classification category. |
+| **502 Bad Gateway** | `INFERENCE_FAILED` | Upstream vision AI provider failed, timed out, or returned an unparseable response. |
+| **503 Service Unavailable** | `PROVIDER_UNAVAILABLE` | No vision AI provider is configured, required API keys are missing, rate limits were hit, or mock mode was rejected in production. |
+| **500 Internal Server Error** | `INTERNAL_SERVER_ERROR` | Unexpected server runtime exception (sanitized; internal stack traces and secrets are never exposed). |
 
 ---
 
@@ -132,43 +86,86 @@ interface ClassificationInput {
 5. `organic` (Food leftovers, fruit peels, compostables)
 6. `e_waste` (Batteries, cables, circuit boards, small electronics) — *`e-waste` alias automatically normalized!*
 7. `general` (Sanitary items, multi-layer unrecyclable films, residual trash)
+8. `unknown` (Unclassified or uncertain materials requiring physical inspection)
 
 ---
 
-## ⚙️ Environment Variables
+## 💻 How to Run the Backend Locally
 
-## Environment Variables
+### Prerequisites
+- Node.js 20+
+- MongoDB instance (local or MongoDB Atlas connection string)
 
-| Variable | Description | Default |
+### Steps
+1. Navigate to the `server/` directory:
+   ```bash
+   cd server
+   ```
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
+3. Configure `server/.env` (see Environment Variables section below).
+4. Start the development server:
+   ```bash
+   npm run dev
+   ```
+   The server will bind to `http://localhost:5000` (or `PORT` from `.env`).
+5. Run automated backend tests:
+   ```bash
+   npm test
+   ```
+
+---
+
+## ⚙️ Environment Variables & Provider Configuration
+
+### Configuration Table
+| Variable | Description | Example / Default |
 |---|---|---|
-| `WASTEQUEST_AI_PROVIDER` | Preferred explicit provider selection: `gemini`, `anthropic`, or `mock` | Automatically selects a configured real provider |
-| `AI_PROVIDER` | Alternative provider selection if `WASTEQUEST_AI_PROVIDER` is not set | Unset |
+| `PORT` | Backend server port | `5000` |
+| `CLIENT_ORIGIN` | Allowed CORS origin for frontend client | `http://localhost:5173` |
+| `MONGODB_URI` | MongoDB connection string | `mongodb://localhost:27017/wastequest` |
+| `WASTEQUEST_AI_PROVIDER` | Explicit AI provider selection: `gemini`, `anthropic`, or `mock` | Defaults to real configured provider |
+| `AI_PROVIDER` | Fallback provider selection if `WASTEQUEST_AI_PROVIDER` is unset | Unset |
 | `GEMINI_API_KEY` | Google Gemini API key | Unset |
 | `GEMINI_MODEL` | Gemini vision model name | `gemini-1.5-flash` |
-| `ANTHROPIC_API_KEY` | Anthropic API key | Unset |
-| `ANTHROPIC_MODEL` | Anthropic vision model name | Configured provider default |
-| `CONFIDENCE_THRESHOLD` | Minimum accepted confidence, from 0 to 1 | `0.5` |
+| `ANTHROPIC_API_KEY` | Anthropic Claude API key | Unset |
+| `ANTHROPIC_MODEL` | Anthropic vision model name | `claude-3-5-sonnet-20241022` |
+| `CONFIDENCE_THRESHOLD` | Minimum accepted confidence score (0.0 to 1.0) | `0.5` |
 | `MAX_IMAGE_SIZE_MB` | Maximum accepted image size in MB | `5` |
-| `NODE_ENV` | Runtime environment; mock mode is rejected in production | Environment-dependent |
+| `NODE_ENV` | Runtime environment (`development`, `test`, `production`) | `development` |
 
-### Provider configuration
+### Genuine Vision AI vs Mock Mode
+- For **genuine image recognition**:
+  ```env
+  WASTEQUEST_AI_PROVIDER=gemini
+  GEMINI_API_KEY=your_gemini_api_key_here
+  GEMINI_MODEL=gemini-1.5-flash
+  ```
+  The system sends the actual image bytes to Google Gemini 1.5 Flash (or Anthropic Claude) and receives authentic categorization, grounded material descriptions, and item-specific disposal guidance.
+- For **offline testing / CI**:
+  ```env
+  WASTEQUEST_AI_PROVIDER=mock
+  ```
+  Generates simulated responses for test execution without calling external vision services.
+- If `NODE_ENV=production`, mock mode is strictly rejected with `503 PROVIDER_UNAVAILABLE`.
+- **Never commit `.env` files or API credentials into source control.**
 
-For real classification, configure a supported provider and its API key.
-
-For local development or tests only, mock classification can be explicitly enabled using:
-
-`WASTEQUEST_AI_PROVIDER=mock`
-
-Mock mode must never be used in production. If no real provider is configured, the classifier returns `PROVIDER_UNAVAILABLE` rather than silently producing simulated results.
-
-Never commit API keys or the local `.env` file.
-
+---
 
 ## 🧪 Testing
-```bash
-# Run automated unit test suite
-npm test
 
-# Run live CLI demo
-npm run demo
+### Backend Server Tests (Jest + Supertest)
+```bash
+cd server
+npm test
 ```
+Runs 27 automated tests covering health checks, reports API, `/api/classify` multipart uploads, error cases, 5 MB limits, mock classifications, genuine Gemini integration, unknown categories, and provider failure handling.
+
+### AI Module Unit Tests (Node native runner)
+```bash
+cd ai
+npm test
+```
+Runs 30 unit tests covering category normalization, confidence boundaries, Gemini provider forwarding, error containment, magic bytes, size limits, and security containment.

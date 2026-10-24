@@ -75,7 +75,7 @@ function getProvider(options = {}) {
     }
     return new GeminiProvider(
       geminiKey,
-      process.env.GEMINI_MODEL || "gemini-1.5-flash"
+      process.env.GEMINI_MODEL || "gemini-3.5-flash-lite"
     );
   }
 
@@ -108,7 +108,7 @@ function getProvider(options = {}) {
   if (geminiKey) {
     return new GeminiProvider(
       geminiKey,
-      process.env.GEMINI_MODEL || "gemini-1.5-flash"
+      process.env.GEMINI_MODEL || "gemini-3.5-flash-lite"
     );
   }
 

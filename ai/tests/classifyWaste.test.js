@@ -254,7 +254,7 @@ describe("WasteQuest AI Classification Module", () => {
   });
 
   it("should reject NaN, Infinity, -Infinity, and non-numeric confidence values", async () => {
-    const invalidConfidences = [NaN, Infinity, -Infinity, "high", true, null, undefined];
+    const invalidConfidences = [NaN, Infinity, -Infinity, "high", true, false, ""];
 
     for (const invalidVal of invalidConfidences) {
       const provider = new MockProvider({
@@ -400,5 +400,159 @@ describe("WasteQuest AI Classification Module", () => {
 
     assert.equal(result.success, false);
     assert.equal(result.error.code, ErrorCodes.LOW_CONFIDENCE);
+  });
+  // 10. Honest confidence handling: missing confidence returns null
+  it("should handle missing confidence scores honestly by returning null without fabricating numbers", async () => {
+    const provider = new MockProvider({
+      presetCategory: "glass",
+      presetConfidence: null
+    });
+
+    const result = await classifyWaste(
+      { buffer: MINIMAL_PNG, mimeType: "image/png" },
+      { provider }
+    );
+
+    assert.equal(result.success, true);
+    assert.equal(result.data.category, "glass");
+    assert.strictEqual(result.data.confidence, null);
+    assert.equal(result.data.recyclable, true);
+  });
+
+  // 11. Unknown / uncertain classification handling
+  it("should support unknown or uncertain waste classifications gracefully", async () => {
+    const provider = new MockProvider({
+      presetCategory: "unknown",
+      presetConfidence: null
+    });
+
+    const result = await classifyWaste(
+      { buffer: MINIMAL_PNG, mimeType: "image/png" },
+      { provider }
+    );
+
+    assert.equal(result.success, true);
+    assert.equal(result.data.category, "unknown");
+    assert.equal(result.data.recyclable, false);
+    assert.match(result.data.bin.name, /Special|Inspection/i);
+    assert.strictEqual(result.data.confidence, null);
+  });
+
+  // 12. Real Gemini Provider unit tests with mocked global fetch
+  describe("GeminiProvider real model integration", () => {
+    const originalFetch = global.fetch;
+
+    afterEach(() => {
+      global.fetch = originalFetch;
+    });
+
+    it("should correctly forward image and parse Gemini vision response", async () => {
+      const { GeminiProvider } = require("../src/providers/geminiProvider");
+      const provider = new GeminiProvider("mock_test_key_gemini");
+
+      global.fetch = async (url, options) => {
+        assert.match(url, /generativelanguage.googleapis.com/);
+        assert.equal(options.headers["x-goog-api-key"], "mock_test_key_gemini");
+        const body = JSON.parse(options.body);
+        assert.ok(body.contents[0].parts[1].inlineData.data);
+        assert.equal(body.contents[0].parts[1].inlineData.mimeType, "image/png");
+
+        return {
+          ok: true,
+          status: 200,
+          json: async () => ({
+            candidates: [
+              {
+                content: {
+                  parts: [
+                    {
+                      text: JSON.stringify({
+                        category: "organic",
+                        isWaste: true,
+                        itemDescription: "Banana peel and apple core",
+                        disposalAdvice: "Place in green wet waste bin for composting."
+                      })
+                    }
+                  ]
+                }
+              }
+            ]
+          })
+        };
+      };
+
+      const result = await provider.classify(MINIMAL_PNG, "image/png");
+      assert.equal(result.category, "organic");
+      assert.strictEqual(result.confidence, null); // Honest uncalibrated confidence
+      assert.equal(result.isWaste, true);
+      assert.equal(result.itemDescription, "Banana peel and apple core");
+      assert.equal(result.disposalAdvice, "Place in green wet waste bin for composting.");
+    });
+
+    it("should handle Gemini authentication failure (401/403) with PROVIDER_UNAVAILABLE", async () => {
+      const { GeminiProvider } = require("../src/providers/geminiProvider");
+      const provider = new GeminiProvider("invalid_test_key");
+
+      global.fetch = async () => ({
+        ok: false,
+        status: 401
+      });
+
+      await assert.rejects(
+        () => provider.classify(MINIMAL_PNG, "image/png"),
+        (err) => {
+          assert.equal(err.code, ErrorCodes.PROVIDER_UNAVAILABLE);
+          assert.match(err.message, /invalid or unauthorized/i);
+          return true;
+        }
+      );
+    });
+
+    it("should handle Gemini rate-limit (429) with PROVIDER_UNAVAILABLE", async () => {
+      const { GeminiProvider } = require("../src/providers/geminiProvider");
+      const provider = new GeminiProvider("rate_limited_key");
+
+      global.fetch = async () => ({
+        ok: false,
+        status: 429
+      });
+
+      await assert.rejects(
+        () => provider.classify(MINIMAL_PNG, "image/png"),
+        (err) => {
+          assert.equal(err.code, ErrorCodes.PROVIDER_UNAVAILABLE);
+          assert.match(err.message, /rate limit exceeded/i);
+          return true;
+        }
+      );
+    });
+
+    it("should handle Gemini malformed model response with INFERENCE_FAILED", async () => {
+      const { GeminiProvider } = require("../src/providers/geminiProvider");
+      const provider = new GeminiProvider("test_key");
+
+      global.fetch = async () => ({
+        ok: true,
+        status: 200,
+        json: async () => ({
+          candidates: [
+            {
+              content: {
+                parts: [{ text: "THIS_IS_NOT_VALID_JSON" }]
+              }
+            }
+          ]
+        })
+      });
+
+      await assert.rejects(
+        () => provider.classify(MINIMAL_PNG, "image/png"),
+        (err) => {
+          assert.equal(err.code, ErrorCodes.INFERENCE_FAILED);
+          assert.match(err.message, /parse classification output/i);
+          return true;
+        }
+      );
+    });
   });
 });

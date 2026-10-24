@@ -6,22 +6,23 @@ const { ErrorCodes, AIClassificationError } = require("./errors");
 const DEFAULT_CONFIDENCE_THRESHOLD = 0.5;
 
 /**
- * Validates that confidence is a finite number between 0 and 1 inclusive.
+ * Validates that confidence is a finite number between 0 and 1 inclusive,
+ * or returns null when no meaningful calibrated probability is provided
+ * (such as with generative LLM vision models).
  * Preserves 0 and never falls back to fabricated defaults.
  *
  * @param {*} rawConfidence - Value returned by model/provider
- * @returns {number} Validated confidence
+ * @returns {number|null} Validated confidence or null if unavailable
  */
 function validateConfidence(rawConfidence) {
-  if (
-    rawConfidence === null ||
-    rawConfidence === undefined ||
-    typeof rawConfidence === "boolean" ||
-    rawConfidence === ""
-  ) {
+  if (rawConfidence === null || rawConfidence === undefined) {
+    return null;
+  }
+
+  if (typeof rawConfidence === "boolean" || rawConfidence === "") {
     throw new AIClassificationError(
       ErrorCodes.INFERENCE_FAILED,
-      "Vision provider returned a missing or invalid confidence score."
+      "Vision provider returned an invalid confidence score format."
     );
   }
 
@@ -118,16 +119,18 @@ async function classifyWaste(input, options = {}) {
       );
     }
 
-    // 5. Strict confidence validation (preserves 0, rejects non-finite/out-of-range)
+    // 5. Strict honest confidence validation (preserves 0, returns null if unavailable, rejects non-finite/out-of-range)
     const confidence = validateConfidence(rawResult.confidence);
 
-    // 6. Apply low-confidence threshold
-    const threshold = resolveThreshold(options.confidenceThreshold);
-    if (confidence < threshold) {
-      throw new AIClassificationError(
-        ErrorCodes.LOW_CONFIDENCE,
-        `Classification confidence (${(confidence * 100).toFixed(1)}%) is below the required threshold of ${(threshold * 100).toFixed(1)}%. Please take a clearer, closer photo.`
-      );
+    // 6. Apply low-confidence threshold only if a calibrated numeric confidence is present
+    if (confidence !== null) {
+      const threshold = resolveThreshold(options.confidenceThreshold);
+      if (confidence < threshold) {
+        throw new AIClassificationError(
+          ErrorCodes.LOW_CONFIDENCE,
+          `Classification confidence (${(confidence * 100).toFixed(1)}%) is below the required threshold of ${(threshold * 100).toFixed(1)}%. Please take a clearer, closer photo.`
+        );
+      }
     }
 
     // 7. Canonical category resolution and guidance enrichment (rejects unknown categories)
@@ -137,9 +140,9 @@ async function classifyWaste(input, options = {}) {
       success: true,
       data: {
         category: guidance.canonicalCategory,
-        confidence: Math.round(confidence * 100) / 100,
+        confidence: confidence !== null ? Math.round(confidence * 100) / 100 : null,
         recyclable: guidance.recyclable,
-        disposalAdvice: guidance.disposalAdvice,
+        disposalAdvice: rawResult.disposalAdvice || guidance.disposalAdvice,
         itemDescription: rawResult.itemDescription || `Detected ${guidance.canonicalCategory}`,
         bin: guidance.bin,
         downstreamRoute: guidance.downstreamRoute,
@@ -169,5 +172,6 @@ module.exports = {
   classifyWaste,
   ErrorCodes,
   AIClassificationError,
-  DEFAULT_CONFIDENCE_THRESHOLD
+  DEFAULT_CONFIDENCE_THRESHOLD,
+  validateConfidence
 };

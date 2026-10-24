@@ -3,6 +3,18 @@ const mongoose = require("mongoose");
 
 const reportSchema = new mongoose.Schema(
   {
+    userName: {
+      type: String,
+      trim: true,
+      maxlength: 50
+    },
+
+    userId: {
+      type: String,
+      trim: true,
+      maxlength: 50
+    },
+
     category: {
       type: String,
       required: true,

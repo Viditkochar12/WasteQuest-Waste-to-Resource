@@ -7,14 +7,14 @@
 const RAW_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 export const IS_MOCK_ENABLED = import.meta.env.VITE_USE_MOCK === "true" || import.meta.env.VITE_USE_MOCK === true;
 
-// Visible dev error if environment variable is missing
-if (!RAW_BASE_URL) {
-  console.error(
-    "CRITICAL CONFIG ERROR: VITE_API_BASE_URL is missing. Please define it in client/.env (e.g. VITE_API_BASE_URL=http://localhost:5000/api)"
+// Default to '/api' (handled by Vite proxy in development) if VITE_API_BASE_URL is not set
+if (!RAW_BASE_URL && !IS_MOCK_ENABLED) {
+  console.info(
+    "VITE_API_BASE_URL not set in client/.env; defaulting to '/api' (proxied by Vite to http://localhost:5000)."
   );
 }
 
-export const API_BASE_URL = RAW_BASE_URL ? RAW_BASE_URL.replace(/\/+$/, "") : "";
+export const API_BASE_URL = RAW_BASE_URL ? RAW_BASE_URL.replace(/\/+$/, "") : "/api";
 
 /**
  * Universal safe fetch helper that guarantees { ok: true, data } | { ok: false, error }
