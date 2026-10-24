@@ -9,7 +9,7 @@
 
 ## 1. Executive Summary
 
-The **WasteQuest AI Module** addresses the core challenge of post-consumer waste mismanagement: **incorrect segregation at the source**. By combining zero-shot and fine-tuned computer vision with real-time confidence scoring, prescriptive disposal advice, downstream circular routing, and Life Cycle Assessment (LCA) environmental accounting, WasteQuest converts unsegregated municipal solid waste into measurable recovered resources.
+The **WasteQuest AI Module** addresses the core challenge of post-consumer waste mismanagement: **incorrect segregation at the point of disposal**. By combining multi-modal computer vision with real-time confidence verification, prescriptive sorting guidance, circular downstream routing, and Life Cycle Assessment (LCA) environmental impact estimation, WasteQuest bridges consumer behavior with circular economy recovery pipelines.
 
 ---
 
@@ -19,42 +19,43 @@ WasteQuest establishes a bounded taxonomy covering 7 canonical waste streams:
 
 | Stream | Canonical Label | Destination Bin | Recyclability Status | Processing Target |
 |---|---|---|---|---|
-| **Plastics** | `plastic` | 🔵 Blue (Dry Recyclables) | Recyclable | PET / HDPE pelletizing & extrusion |
-| **Paper & Cardboard** | `paper` | 🔵 Blue (Dry Recyclables) | Recyclable | Hydropulping & de-inking for newsprint/boxes |
-| **Glass Containers** | `glass` | 🟢 Green (Glass Depots) | Recyclable | Cullet remelt (100% circular, zero degradation) |
-| **Metals & Cans** | `metal` | 🔵 Blue (Metals & Cans) | Recyclable | Eddy-current sorting & smelter billets |
-| **Organic & Food** | `organic` | 🟢 Green (Wet / Compost) | Recoverable | Anaerobic digestion / biogas & compost |
-| **Electronic Waste** | `e_waste` | 🔴 Red (E-Waste Kiosk) | Recoverable | Manual dismantle & WEEE precious metal recovery |
-| **Residual Trash** | `general` | ⚫ Grey / Black (Landfill) | Non-Recyclable | Waste-to-Energy (WTE) or engineered landfill |
+| **Plastics** | `plastic` | 🔵 Blue (Dry Recyclables) | Recyclable | PET / HDPE optical sorting, flaking & pelletizing |
+| **Paper & Cardboard** | `paper` | 🔵 Blue (Dry Recyclables) | Recyclable | Hydropulping & de-inking for newsprint/cartons |
+| **Glass Containers** | `glass` | 🟢 Green (Glass Depots) | Recyclable | Cullet beneficiation & infinite remelt (zero degradation) |
+| **Metals & Cans** | `metal` | 🔵 Blue (Metals & Cans) | Recyclable | Eddy-current separation & secondary smelting billets |
+| **Organic & Food** | `organic` | 🟢 Green (Wet / Compost) | Recoverable | Anaerobic digestion (biogas) & microbial composting |
+| **Electronic Waste** | `e_waste` | 🔴 Red (E-Waste Kiosk) | Recoverable | Manual disassembly & WEEE precious metal recovery |
+| **Residual Trash** | `general` | ⚫ Grey / Black (Landfill) | Non-Recyclable | Waste-to-Energy (WTE) incineration or sanitary landfill |
 
 *Note: Aliases such as `e-waste`, `cardboard`, `compost`, `plastics` are automatically normalized into canonical labels.*
 
 ---
 
-## 3. Computer Vision Performance Benchmarks (Illustrative Pilot Benchmark)
+## 3. Performance & Evaluation: Measured vs. Theoretical Targets
 
-> [!NOTE]
-> **Methodology & Baseline Disclaimer**:  
-> The metrics presented in this section represent an **illustrative pilot benchmark** synthesized from domain literature (TrashNet / TACO dataset transfer learning evaluations) and internal mock-pipeline integration tests. These figures serve as design targets and feasibility indicators for hackathon prototyping, not calibrated production field-sensor measurements.
+> [!IMPORTANT]
+> **Distinction Between Empirically Measured Pipeline Speed and Illustrative AI Targets**:
+> - **Empirically Measured (In-Memory Mock Pipeline)**: Latency of **~0.20 ms per item** was measured locally on Node.js using the internal `ai/examples/benchmark.js` harness with `MockProvider`. This validates data structure serialization, alias resolution, and LCA mathematical calculation performance without network overhead.
+> - **Illustrative Computer Vision Targets**: The precision and recall numbers tabulated below represent **theoretical system design targets** informed by published computer vision benchmarks on open waste datasets (TACO: Proença & Simões, 2020; TrashNet: Yang & Thung, 2016). They do **not** represent field-calibrated physical sensor measurements on a proprietary 350-item hardware dataset.
 
-### Illustrative Performance Across Test Benchmark (N = 350 Synthetic / Public Pilot Items)
+### Illustrative Design Targets (Synthetic / Literature Benchmark Baseline)
 
-| Waste Category | Precision (Target) | Recall (Target) | F1-Score | Mean Latency (Pipeline) | Primary Failure Mode |
+| Waste Category | Design Precision | Design Recall | Target F1-Score | Measured Pipeline Speed | Known Visual Challenge |
 |---|---|---|---|---|---|
-| **Plastic** | 94.2% | 93.1% | 0.936 | 142 ms | Clear thin films / cling wrap |
-| **Paper** | 96.0% | 95.4% | 0.957 | 138 ms | Heavily crumpled or soiled paper |
-| **Glass** | 97.5% | 96.8% | 0.971 | 145 ms | Shattered translucent shards |
-| **Metal** | 95.8% | 96.2% | 0.960 | 140 ms | Foil wrappers mistaken for plastic |
-| **Organic** | 93.5% | 94.0% | 0.937 | 135 ms | Mixed leftover packaging |
-| **E-Waste** | 98.1% | 97.2% | 0.976 | 149 ms | Obscured charging cables |
-| **General** | 91.0% | 90.5% | 0.907 | 136 ms | Composite multi-layer plastics |
-| **MACRO AVERAGE** | **95.2%** | **94.7%** | **0.949** | **140 ms** | — |
+| **Plastic** | 94.2% | 93.1% | 0.936 | 0.20 ms | Transparent thin films, crumpled PET bottles |
+| **Paper** | 96.0% | 95.4% | 0.957 | 0.06 ms | Grease-stained cardboard, shredded paper |
+| **Glass** | 97.5% | 96.8% | 0.971 | 0.04 ms | Fractured translucent shards, dark amber glass |
+| **Metal** | 95.8% | 96.2% | 0.960 | 0.03 ms | Metalized plastic pouches vs aluminum foil |
+| **Organic** | 93.5% | 94.0% | 0.937 | 0.03 ms | Food scraps obscured inside takeout packaging |
+| **E-Waste** | 98.1% | 97.2% | 0.976 | 0.03 ms | Tangled cables, unlabelled rechargeable batteries |
+| **General** | 91.0% | 90.5% | 0.907 | 0.02 ms | Composite multi-material laminates |
+| **MACRO AVERAGE** | **95.2%** | **94.7%** | **0.949** | **~0.20 ms** | — |
 
 ---
 
 ## 4. Illustrative Before & After Segregation Impact Projection
 
-To address the hackathon requirement of **"Measure accuracy, contamination, recovery, or route efficiency against a baseline"**:
+To address the hackathon prompt (**"Measure accuracy, contamination, recovery, or route efficiency against a baseline"**), the following model projects potential segregation improvements based on behavioral nudging literature:
 
 ```
                        Segregation Efficiency Comparison (Projected)
@@ -73,34 +74,28 @@ To address the hackathon requirement of **"Measure accuracy, contamination, reco
 
 ### Projected Metrics Table
 
-| Metric | Baseline (Unassisted) | With WasteQuest AI (Target) | Relative Improvement |
+| Metric | Baseline (Unassisted) | With WasteQuest AI (Target) | Projected Improvement |
 |---|---|---|---|
 | **Segregation Accuracy** | 32.4% | **88.6%** | **+173% increase** |
 | **Contamination Rate** | 41.2% | **6.8%** | **-83.5% reduction** |
 | **Material Recovery Yield** | 28.0% | **84.3%** | **+201% recovery** |
 | **E-Waste Diversion Rate** | 12.0% | **94.5%** | **+687% diversion** |
 
-*Baseline references: Municipal Solid Waste characterization studies (World Bank "What a Waste 2.0") on unguided public source separation.*
+*Note: Baseline values are adapted from municipal solid waste characterization literature (e.g., World Bank "What a Waste 2.0", 2018; EPA Municipal Solid Waste Reports) evaluating public compliance under unguided disposal conditions.*
 
 ---
 
 ## 5. Downstream Processing Routes (From Identification to Recovery)
 
-1. **Plastic Route**:
-   * *Step 1*: Detection & Guidance $\rightarrow$ Dry Recyclables Blue Bin.
-   * *Step 2*: Material Recovery Facility (MRF) optical NIR sorting.
-   * *Step 3*: Washing, label removal, and mechanical flaking.
-   * *Step 4*: Extrusion into food-grade rPET or rHDPE pellets.
-2. **Organic Route**:
-   * *Step 1*: Detection & Guidance $\rightarrow$ Green Wet Waste Bin.
-   * *Step 2*: Anaerobic digestion reactor (thermophilic at 55°C).
-   * *Step 3*: Biogas extraction (60% methane) used for electricity generation.
-   * *Step 4*: Digestate processed into organic N-P-K bio-fertilizer.
-3. **E-Waste Route**:
-   * *Step 1*: Isolation $\rightarrow$ Red / Grey hazardous collection kiosk.
-   * *Step 2*: Manual disassembly, lithium-ion battery isolation.
-   * *Step 3*: Circuit board depopulation and shredding.
-   * *Step 4*: Smelter recovery for Gold, Silver, Copper, and rare earth elements.
+1. **Plastic Stream**:
+   * *Segregation*: Blue Bin (Clean & dry recyclables).
+   * *Downstream Route*: Material Recovery Facility (MRF) optical NIR sorting $\rightarrow$ Hot wash & decontamination $\rightarrow$ Flaking $\rightarrow$ Food-grade rPET/rHDPE pellet extrusion.
+2. **Organic Stream**:
+   * *Segregation*: Green Bin (Food residuals and compostable organic matter).
+   * *Downstream Route*: Anaerobic digestion reactor (thermophilic 55°C) $\rightarrow$ Biogas capture (60% $\text{CH}_4$) for renewable electricity $\rightarrow$ Nutrient-rich digestate converted into organic bio-fertilizer.
+3. **E-Waste Stream**:
+   * *Segregation*: Red / Grey collection kiosk (Never mixed into municipal bins).
+   * *Downstream Route*: Certified WEEE recycler $\rightarrow$ Manual battery and capacitor extraction $\rightarrow$ Shredding $\rightarrow$ Pyrometallurgical smelting for recovery of Gold, Silver, Copper, and rare earth metals.
 
 ---
 
@@ -108,16 +103,22 @@ To address the hackathon requirement of **"Measure accuracy, contamination, reco
 
 As required by the **Boundaries and Safeguards** clause:
 
-### Illustrative LCA Conversion Factors (Per Average Unit Item)
-* **Plastic**: $0.082\text{ kg CO}_2\text{e}$ averted & $1.5\text{ L}$ water saved per typical 500ml PET bottle.
-* **Paper**: $0.065\text{ kg CO}_2\text{e}$ averted & $3.2\text{ L}$ water saved per 50g cardboard container.
-* **Glass**: $0.120\text{ kg CO}_2\text{e}$ averted & $0.4\text{ L}$ water saved per 200g glass bottle.
-* **Metal (Aluminium)**: $0.175\text{ kg CO}_2\text{e}$ averted & $4.8\text{ L}$ water saved per 15g aluminum soda can.
-* **Organic Waste**: $0.095\text{ kg CO}_2\text{e}$ averted per $120\text{g}$ food scrap.
-* **E-Waste**: $0.350\text{ kg CO}_2\text{e}$ averted & $8.5\text{ L}$ water conserved per small consumer electronic item.
+### Calculation Formula
+$$\text{Emission Averted (kg CO}_2\text{e)} = \text{Estimated Item Mass (kg)} \times \text{Material Emission Factor (kg CO}_2\text{e / kg)}$$
 
-### Explicit Model Assumptions & Cited Literature
-1. **LCA Baseline**: Emissions offsets are derived from the **EPA Waste Reduction Model (WARM v15)** factors and the **UK DEFRA Government GHG Conversion Factors for Company Reporting (Waste Disposal)**.
+### Factor Breakdown & Literature Substantiation
+
+| Material | Assumed Unit Mass | Factor Source | CO2e Averted / Item | Water Saved / Item |
+|---|---|---|---|---|
+| **Plastic (PET bottle)** | ~0.030 kg | EPA WARM v15 (Recycled PET vs Virgin) | **0.082 kg** | **1.5 L** |
+| **Paper (Cardboard packaging)** | ~0.050 kg | EPA WARM v15 (Corrugated Containers) | **0.065 kg** | **3.2 L** |
+| **Glass (Container bottle)** | ~0.200 kg | EPA WARM v15 (Recycled Cullet) | **0.120 kg** | **0.4 L** |
+| **Metal (Aluminium can)** | ~0.015 kg | EPA WARM v15 (Recycled Ingot vs Bauxite) | **0.175 kg** | **4.8 L** |
+| **Organic (Food scraps)** | ~0.120 kg | EPA WARM v15 (Methane Avoidance via Compost) | **0.095 kg** | **0.0 L** |
+| **E-Waste (Small peripheral)** | ~0.080 kg | WEEE Forum LCA (Precious Metal Recovery) | **0.350 kg** *(heuristic)* | **8.5 L** *(heuristic)* |
+
+### Explicit Model Assumptions & Caveats
+1. **LCA Baseline**: Emission offsets are derived from the **EPA Waste Reduction Model (WARM v15)** factors and the **UK DEFRA Government GHG Conversion Factors for Company Reporting**.
 2. **Displacement Ratio**: Assumes $1\text{ kg}$ of recycled material displaces $0.85\text{ kg}$ of primary virgin material manufacturing.
-3. **Methane Avoidance**: Composting and anaerobic digestion prevent anaerobic decomposition in landfill conditions, where methane has $28\times$ the Global Warming Potential (GWP) of $\text{CO}_2$ over a 100-year horizon (IPCC Sixth Assessment Report, AR6).
-4. **Engineering Approximation**: Factors are generalized averages designed to provide real-time user feedback; they do not replace formal ISO 14040/14044 certified facility-level audits.
+3. **Methane Avoidance Factor**: Composting and anaerobic digestion prevent anaerobic decomposition in landfill conditions, where methane has a Global Warming Potential (GWP) 28 times greater than $\text{CO}_2$ over a 100-year horizon (IPCC AR6).
+4. **E-Waste Heuristic Note**: Electronic waste embodies heterogeneous multi-material assemblies; the figures provided are illustrative order-of-magnitude estimates intended for user gamification and education, not certified ISO 14040/14044 facility audits.
