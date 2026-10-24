@@ -16,14 +16,23 @@ export default function LeaderboardSection() {
     getLeaderboard({ signal: controller.signal })
       .then((res) => {
         if (ignore) return;
+        setError(null);
         if (res.ok) {
-          setLeaderboard(Array.isArray(res.data) ? res.data : []);
+          if (!Array.isArray(res.data)) {
+            setLeaderboard(null);
+            setError("The server returned an unexpected leaderboard response.");
+            setIsEndpointMissing(false);
+            setLoading(false);
+            return;
+          }
+          setLeaderboard(res.data.filter((entry) => entry && typeof entry === "object" && !Array.isArray(entry)));
           setError(null);
           setIsEndpointMissing(false);
         } else {
           if (res.error?.code === "ROUTE_NOT_FOUND" || res.error?.status === 404) {
             setIsEndpointMissing(true);
           } else {
+            setIsEndpointMissing(false);
             setError(res.error?.message || "Failed to load leaderboard rankings.");
           }
           setLeaderboard(null);
@@ -32,7 +41,8 @@ export default function LeaderboardSection() {
       })
       .catch((err) => {
         if (ignore) return;
-        setError(err.message || "Failed to load leaderboard.");
+        setIsEndpointMissing(false);
+        setError(err?.message || "Failed to load leaderboard.");
         setLoading(false);
       });
 
@@ -102,9 +112,9 @@ export default function LeaderboardSection() {
                   <line x1="12" y1="16" x2="12.01" y2="16" />
                 </svg>
               </div>
-              <h3 style={{ fontSize: "1.25rem", marginBottom: "0.5rem", color: "var(--ink)" }}>Leaderboard not available yet</h3>
+              <h3 style={{ fontSize: "1.25rem", marginBottom: "0.5rem", color: "var(--ink)" }}>Leaderboard route unavailable</h3>
               <p style={{ fontSize: "0.875rem", color: "var(--mute)", maxWidth: "440px", margin: "0 auto 1.5rem" }}>
-                The backend route <code>GET /api/leaderboard</code> is currently under development by Vidit. Real community rankings will populate automatically once the endpoint is live.
+                This server did not provide <code>GET /api/leaderboard</code>. Check that the current WasteQuest backend is running, then try again.
               </p>
               <button
                 type="button"
@@ -181,7 +191,7 @@ export default function LeaderboardSection() {
                       </span>
                       <div>
                         <strong style={{ display: "block", color: "var(--ink)" }}>
-                          {user.name || user.username || `Recycler_${rank}`}
+                          {user.name || user.username || "Unknown contributor"}
                         </strong>
                         <span style={{ fontSize: "0.75rem", color: "var(--mute)" }}>
                           {user.badge || (user.itemsCount ? `${user.itemsCount} items sorted` : "Active Contributor")}

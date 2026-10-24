@@ -272,6 +272,38 @@ export async function getReports({ page, limit, category, status, signal } = {})
 }
 
 /**
+ * Upload a report image to the backend Cloudinary integration.
+ * POST /api/uploads with multipart field "image".
+ */
+export async function uploadReportImage(file, { signal } = {}) {
+  if (!file) {
+    return {
+      ok: false,
+      error: { code: "MISSING_FILE", message: "Please select an image to upload.", status: 400 }
+    };
+  }
+
+  if (IS_MOCK_ENABLED) {
+    return {
+      ok: false,
+      error: {
+        code: "MOCK_UPLOAD_UNAVAILABLE",
+        message: "Report image uploads are disabled in mock mode. Disable VITE_USE_MOCK and configure Cloudinary to save a real report.",
+        status: 503
+      }
+    };
+  }
+
+  const formData = new FormData();
+  formData.append("image", file);
+  return safeFetch(`${API_BASE_URL}/uploads`, {
+    method: "POST",
+    body: formData,
+    signal
+  });
+}
+
+/**
  * Save / Create Report
  * POST /api/reports
  */
@@ -303,7 +335,7 @@ export async function createReport(reportPayload, { signal } = {}) {
 
 /**
  * Fetch Leaderboard
- * GET /api/leaderboard (with graceful 404 handling if not yet implemented)
+ * GET /api/leaderboard
  */
 export async function getLeaderboard({ signal } = {}) {
   if (IS_MOCK_ENABLED) {

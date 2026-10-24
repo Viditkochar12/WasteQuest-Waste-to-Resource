@@ -130,7 +130,7 @@ This document specifies the exact API contract for the WasteQuest client, compar
 ---
 
 ### Route: `POST /api/classify` (AI Vision Classification)
-- **Status in Active Backend:** **NOT MOUNTED YET IN Express `app.js`** (Returns `404 ROUTE_NOT_FOUND`).
+- **Status in Active Backend:** Mounted in `server/src/app.js`; accepts multipart field `image` and delegates classification to the AI module.
 - **Specification Source:** `ai/src/classifyWaste.js` (Merged into `main` via PR #7)
 - **Agreed Contract Specification:**
   - **HTTP Method:** `POST`
@@ -145,7 +145,7 @@ This document specifies the exact API contract for the WasteQuest client, compar
       "success": true,
       "data": {
         "category": "plastic",
-        "confidence": 0.94,
+        "confidence": null,
         "itemDescription": "Crushed PET water bottle",
         "recyclable": true,
         "bin": {
@@ -171,14 +171,23 @@ This document specifies the exact API contract for the WasteQuest client, compar
 
 ---
 
-### Proposed Route: `GET /api/leaderboard`
-- **Status in Active Backend:** **NOT IMPLEMENTED YET** (Returns `404 ROUTE_NOT_FOUND`).
-- **Client Handling:** Client renders a polite empty/pending state: *"Leaderboard not available yet (backend endpoint in progress)"* without breaking or crashing, and without generating synthetic fake rows.
+### Route: `POST /api/uploads` (Cloudinary image storage)
+- **Status in Active Backend:** Mounted in `server/src/app.js` at `/api/uploads`.
+- **Request:** `multipart/form-data` with one image under field `image`; JPEG, PNG, or WebP, up to 5 MB.
+- **Success:** `201 Created`, `{ "success": true, "data": { "url": "https://...", "publicId": "..." } }`.
+- **Configuration:** Set `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, and `CLOUDINARY_API_SECRET` in `server/.env`. Keep the API secret on the server; the frontend calls only the backend route.
+- **Report flow:** The frontend uploads the selected image and sends the returned `url` and `publicId` to `POST /api/reports`.
+
+---
+
+### Route: `GET /api/leaderboard`
+- **Status in Active Backend:** Implemented in `server/src/routes/leaderboard.routes.js`; it aggregates persisted reports with contributor IDs or names.
+- **Client Handling:** Client displays returned rankings, an empty state when no contributors exist, and a connection error state if the request fails.
 
 ---
 
 ### Proposed Route: `GET /api/users/me`
-- **Status in Active Backend:** **NOT IMPLEMENTED YET** (Returns `404 ROUTE_NOT_FOUND`).
+- **Status in Active Backend:** Not implemented; no user profile route or authentication system is mounted.
 
 ---
 
@@ -186,8 +195,8 @@ This document specifies the exact API contract for the WasteQuest client, compar
 
 | Feature / Route | Agreed Specification | Active Backend (`server/`) | Frontend Handling |
 |---|---|---|---|
-| `POST /api/classify` | AI image classification endpoint | Logic merged in `ai/`, but not mounted in `server/src/app.js` (404) | Client attempts real call; surfaces actual backend error code `ROUTE_NOT_FOUND`. Has explicit toggle `VITE_USE_MOCK=true` with prominent banner for local demonstration. |
-| Report Image Upload | `POST /api/reports` requires `image.url` and `image.publicId` | Backend does not provide image cloud upload middleware (e.g. Cloudinary/S3) | Flagged in `docs/OPEN_QUESTIONS.md`. Client service accepts both modes: either classification returns uploaded image details, or client provides fallback preview ref. |
+| `POST /api/classify` | AI image classification endpoint | Mounted in `server/src/app.js`; validates multipart uploads and calls the AI module | Client calls the route and displays classification results or structured errors. Explicit `VITE_USE_MOCK=true` enables simulated results for local demos. |
+| Report Image Upload | `POST /api/reports` requires `image.url` and `image.publicId` | `POST /api/uploads` stores images in Cloudinary and returns `{ url, publicId }`; report creation stores those values | Frontend uploads the selected image first and submits the returned Cloudinary fields. |
 | Report Coordinates | `POST /api/reports` requires `location.latitude` & `longitude` | Required in Mongoose schema | Client requests standard browser Geolocation (HTML5 Geolocation API with user permission) when submitting a report, or provides graceful fallback coordinates. |
-| `GET /api/leaderboard` | Returns ranked users and EcoPoints | Not implemented (404) | Client safely renders "Leaderboard not available yet" state, never fabricating mock leaderboard entries in production mode. |
+| `GET /api/leaderboard` | Returns ranked users and EcoPoints | Implemented; ranks report contributors with a name or ID | Client renders rankings, empty state, or connection error. |
 | Pagination | Anticipated pagination query params (`page`, `limit`) | Fully implemented in `server/src/routes/reports.routes.js` | Client service passes clean query parameters and renders Previous/Next pagination controls. |
